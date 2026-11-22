@@ -41,7 +41,7 @@ const cases = [
         await go(page, '/');
         assert.match(await page.title(), /معلم ورزش/);
         assert.deepEqual(await page.locator('html').evaluate(e => [e.lang, e.dir]), ['fa-IR', 'rtl']);
-        assert.equal(await page.locator('h1').innerText(), 'تجهیزات ورزشی');
+        assert.equal((await page.locator('h1').innerText()).replace(/\s+/g, ' '), 'لباس و تجهیزات ورزشی');
         await page.locator('.hero img').evaluate(img => img.decode());
         const hero = new URL(await page.locator('.hero img').evaluate(img => img.currentSrc));
         assert.equal(hero.origin, base);
@@ -57,7 +57,11 @@ const cases = [
             assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Overflow at width ' + width);
             assert.ok(await page.getByRole('button', { name: 'جست‌وجو', exact: true }).boundingBox().then(box => box.width >= 44));
             if (width === 375) {
-                await page.locator('.hero img').evaluate(img => img.decode());
+                const mobileHero = await page.locator('.hero img').evaluate(async img => {
+                    await img.decode();
+                    return img.currentSrc;
+                });
+                assert.ok(mobileHero.endsWith('/hero-mobile.webp'));
                 await page.screenshot({ path: resolve(evidence, 'storefront-mobile.png'), fullPage: true });
             }
         }
@@ -94,7 +98,11 @@ const cases = [
         const result = page.locator('ul.products a.woocommerce-LoopProduct-link').filter({ hasText: messi.name });
         await result.waitFor({ state: 'visible' });
         assert.ok(await page.locator('main').evaluate(element => element.clientWidth > window.innerWidth * 0.9));
-        assert.equal(await page.locator('body').evaluate(element => getComputedStyle(element).display), 'block');
+        const layout = await page.locator('main').evaluate(element => {
+            const header = document.querySelector('.site-header');
+            return element.getBoundingClientRect().top >= header.getBoundingClientRect().bottom;
+        });
+        assert.ok(layout, 'Search results should appear below the header');
         await page.getByRole('searchbox', { name: 'جست‌وجوی کالا' }).fill('هیچکالا۰۰۰ZZ');
         await page.getByRole('button', { name: 'جست‌وجو', exact: true }).click();
         await page.waitForURL(url => url.searchParams.get('s') === 'هیچکالا۰۰۰ZZ');

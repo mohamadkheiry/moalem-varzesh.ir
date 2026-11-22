@@ -22,6 +22,7 @@ add_action('wp_enqueue_scripts', static function (): void {
 
 function mv_icon(string $name): void {
     $icons = [
+        'arrow' => '<path d="M19 12H5m6-6-6 6 6 6"/>',
         'search' => '<circle cx="11" cy="11" r="6.8"/><path d="m16 16 4.2 4.2"/>',
         'user' => '<circle cx="12" cy="8" r="3.2"/><path d="M5 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2z"/>',
         'cart' => '<path d="M2.5 4h2.7l2.5 11.2h10.6L21 7.5H6"/><circle cx="9" cy="20" r="1.25"/><circle cx="17" cy="20" r="1.25"/>',

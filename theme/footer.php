@@ -14,13 +14,13 @@
                 if (!$menu && (!empty($assigned[$location]) || empty($defaults[$location]))) continue;
                 $heading = $footer['headings'][$location];
                 ?>
-                <div class="mv-footer-group">
+                <div class="mv-footer-group" data-menu="<?php echo esc_attr($location); ?>">
                     <h2><?php echo esc_html($heading); ?></h2>
                     <nav aria-label="<?php echo esc_attr($heading); ?>">
                         <?php if ($menu) : echo $menu; else : ?>
                             <ul class="mv-footer-links">
                                 <?php foreach ($defaults[$location] as [$id, $label]) : ?>
-                                    <li><a href="<?php echo esc_url(get_permalink($id)); ?>"><?php echo esc_html($label); ?></a></li>
+                                    <li><a href="<?php echo esc_url(get_permalink($id)); ?>"<?php if ($id === get_queried_object_id()) echo ' aria-current="page"'; ?>><?php echo mv_footer_link_contents(esc_html($label), $id); ?></a></li>
                                 <?php endforeach; ?>
                             </ul>
                         <?php endif; ?>

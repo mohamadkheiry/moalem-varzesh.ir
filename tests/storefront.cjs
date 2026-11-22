@@ -677,7 +677,39 @@ const cases = [
             const response = await page.request.get(base + href, { maxRedirects: 0 });
             assert.equal(response.status(), 200, href);
         }
-        await page.locator('.site-footer').screenshot({ path: resolve(evidence, 'support-footer-desktop.png') });
+        const footer = page.locator('.site-footer');
+        const help = footer.locator('[data-menu="mv_footer_help"]');
+        const policies = footer.locator('[data-menu="mv_footer_policies"]');
+        assert.deepEqual(await help.locator('.mv-footer-link-icon').evaluateAll(icons => icons.map(icon => icon.dataset.icon)),
+            ['book', 'chat', 'info']);
+        assert.deepEqual(await policies.locator('.mv-footer-link-icon').evaluateAll(icons => icons.map(icon => icon.dataset.icon)),
+            ['document', 'return', 'shield', 'check']);
+        for (const width of [320, 390, 768, 1024, 1440]) {
+            await page.setViewportSize({ width, height: 960 });
+            await footer.scrollIntoViewIfNeeded();
+            const [helpBox, policyBox] = await Promise.all([help.boundingBox(), policies.boundingBox()]);
+            assert.ok(width < 768
+                ? helpBox.y + helpBox.height < policyBox.y
+                : Math.abs(helpBox.y - policyBox.y) < 1 && helpBox.x >= policyBox.x + policyBox.width, width);
+            if (width >= 1024) {
+                const brand = await footer.locator('.mv-footer-brand').boundingBox();
+                assert.ok(brand.x >= helpBox.x + helpBox.width, width);
+            }
+            assert.ok(await menus.locator('a').evaluateAll(links => links.every(link => {
+                const bounds = link.getBoundingClientRect();
+                return bounds.width >= 48 && bounds.height >= 48 && bounds.left >= 0 && bounds.right <= innerWidth
+                    && link.scrollWidth <= link.clientWidth;
+            })), 'Touch targets and legible labels at ' + width);
+            if ([390, 1440].includes(width)) {
+                await footer.screenshot({ path: resolve(evidence, 'support-footer-' + (width === 390 ? 'mobile' : 'desktop') + '.png') });
+            }
+        }
+        const guide = help.getByRole('link', { name: 'راهنمای خرید و مقالات ورزشی', exact: true });
+        await guide.focus();
+        assert.ok(await guide.evaluate(link => link.matches(':focus-visible') && getComputedStyle(link).outlineStyle !== 'none'));
+        await page.keyboard.press('Enter');
+        await page.waitForURL('**/blog/');
+        assert.equal(await guide.getAttribute('aria-current'), 'page');
         const covers = new Set();
         for (const [index, path] of paths.entries()) {
             const mobile = index % 2 === 1;
@@ -707,8 +739,6 @@ const cases = [
             }
         }
         assert.equal(covers.size, 7);
-        await page.setViewportSize({ width: 390, height: 950 });
-        await page.locator('.site-footer').screenshot({ path: resolve(evidence, 'support-footer-mobile.png') });
     }],
     ['23', 'مدیریت متن و تصویر صفحه، رنگ فوتر و منوی وردپرس', async page => {
         const fixture = JSON.parse(readFileSync(process.env.MV_SUPPORT_ADMIN_FIXTURE, 'utf8'));

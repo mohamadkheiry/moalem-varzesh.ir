@@ -69,6 +69,37 @@ function mv_footer_default_items(): array {
     return $items;
 }
 
+function mv_footer_link_contents(string $title, int $page_id): string {
+    $icon = match (mv_support_page_key($page_id)) {
+        'guides' => 'book',
+        'about' => 'info',
+        'contact' => 'chat',
+        'terms' => 'document',
+        'returns' => 'return',
+        'privacy' => 'shield',
+        'cookies' => 'check',
+        default => 'arrow',
+    };
+    if ($icon === 'arrow' && $page_id && function_exists('wc_get_page_id')) {
+        $icon = match ($page_id) {
+            wc_get_page_id('shop') => 'bag',
+            wc_get_page_id('myaccount') => 'user',
+            wc_get_page_id('cart') => 'cart',
+            default => 'arrow',
+        };
+    }
+    ob_start();
+    ?><span class="mv-footer-link-icon" data-icon="<?php echo esc_attr($icon); ?>" aria-hidden="true"><?php mv_icon($icon); ?></span><span class="mv-footer-link-label"><?php echo $title; ?></span><?php
+    return (string) ob_get_clean();
+}
+
+add_filter('nav_menu_item_title', static function (string $title, WP_Post $item, stdClass $args): string {
+    if (!isset(mv_footer_locations()[$args->theme_location ?? ''])) {
+        return $title;
+    }
+    return mv_footer_link_contents($title, $item->object === 'page' ? (int) $item->object_id : 0);
+}, 10, 3);
+
 function mv_support_defaults(): array {
     $defaults = [
         'footer_intro' => 'فروشگاه پوشاک، کفش و تجهیزات ورزشی',

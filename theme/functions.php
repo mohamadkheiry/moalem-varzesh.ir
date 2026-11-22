@@ -57,6 +57,11 @@ function mv_icon(string $name): void {
         'whatsapp' => '<path d="M20.5 11.9a8.5 8.5 0 0 1-12.2 7.6l-4.6 1 1-4.3a8.5 8.5 0 1 1 15.8-4.3Z"/><path d="M9 8.5c.3 3 2.6 5.5 5.6 6l1.1-1.3-1.8-1.1-.9.5a6 6 0 0 1-2.3-2.5l.5-.7-1-1.8Z"/>',
         'chat' => '<path d="M20.6 11.8a8.6 8.6 0 0 1-8.6 8.6 9 9 0 0 1-3.8-.9l-4.6 1 .9-4.4a8.6 8.6 0 1 1 16.1-4.3Z"/><path d="M8.8 11.8h6.4"/>',
         'phone' => '<path d="m8 4 2.2 4.1-2.1 2.2a13 13 0 0 0 5.6 5.6l2.2-2.1L20 16v2.2c0 1-.8 1.8-1.8 1.8A14.2 14.2 0 0 1 4 5.8C4 4.8 4.8 4 5.8 4Z"/>',
+        'book' => '<path d="M12 6.5C9.8 4.4 6.5 4 3.5 5v13c3-1 6.3-.6 8.5 1.5 2.2-2.1 5.5-2.5 8.5-1.5V5c-3-1-6.3-.6-8.5 1.5Zm0 0v13"/>',
+        'info' => '<circle cx="12" cy="12" r="8.25"/><path d="M12 11.5v4.25M12 8.5h.01"/>',
+        'document' => '<path d="M14 4H6v16h12V8l-4-4Zm0 0v4h4M9 12h6m-6 4h6"/>',
+        'return' => '<path d="m8 5-4 4 4 4M4 9h11a4.5 4.5 0 0 1 0 9h-3"/>',
+        'shield' => '<path d="M12 3 5 6v5.25c0 4.4 2.5 7.3 7 9.5 4.5-2.2 7-5.1 7-9.5V6l-7-3Zm-3 9 2 2 4-4"/>',
     ];
     if (isset($icons[$name])) {
         echo '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $icons[$name] . '</svg>';

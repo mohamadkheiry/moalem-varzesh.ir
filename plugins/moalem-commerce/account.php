@@ -1,16 +1,16 @@
 <?php
 defined('ABSPATH') || exit;
 
-function mv_commerce_otp_digest(string $phone, string $challenge, string $code): string {
-    return mv_commerce_key('otp-code', $phone . '|' . $challenge . '|' . $code);
+function mv_commerce_otp_digest(string $phone, string $challenge, string $code, string $scope = 'otp'): string {
+    return mv_commerce_key($scope . '-code', $phone . '|' . $challenge . '|' . $code);
 }
 
-function mv_commerce_otp_request(string $phone, string $ip) {
+function mv_commerce_otp_request(string $phone, string $ip, string $scope = 'otp', string $label = 'کد ورود') {
     if (!mv_commerce_limit(mv_commerce_key('otp-send-ip', $ip), 8, 15 * MINUTE_IN_SECONDS)) {
         return new WP_Error('otp_limit');
     }
 
-    $key = mv_commerce_key('otp', $phone);
+    $key = mv_commerce_key($scope, $phone);
     $now = time();
     $previous = mv_commerce_read($key);
     $previous_data = $previous ? json_decode($previous['payload'], true) : [];
@@ -22,7 +22,7 @@ function mv_commerce_otp_request(string $phone, string $ip) {
     $challenge = bin2hex(random_bytes(16));
     $data = [
         'id' => $challenge,
-        'digest' => mv_commerce_otp_digest($phone, $challenge, $code),
+        'digest' => mv_commerce_otp_digest($phone, $challenge, $code, $scope),
         'attempts' => 0,
         'resend' => $now + MINUTE_IN_SECONDS,
     ];
@@ -30,7 +30,7 @@ function mv_commerce_otp_request(string $phone, string $ip) {
     if (!mv_commerce_write($key, $previous, $expires, $data)) {
         return new WP_Error('otp_limit');
     }
-    $result = mv_commerce_sms($phone, "معلم ورزش | کد ورود: $code\nاعتبار کد: ۵ دقیقه");
+    $result = mv_commerce_sms($phone, "معلم ورزش | $label: $code\nاعتبار کد: ۵ دقیقه");
     if (is_wp_error($result)) {
         $current = mv_commerce_read($key);
         $current_data = $current ? json_decode($current['payload'], true) : [];
@@ -42,8 +42,8 @@ function mv_commerce_otp_request(string $phone, string $ip) {
     return $result;
 }
 
-function mv_commerce_otp_verify(string $phone, string $code): bool {
-    $key = mv_commerce_key('otp', $phone);
+function mv_commerce_otp_verify(string $phone, string $code, string $scope = 'otp'): bool {
+    $key = mv_commerce_key($scope, $phone);
     for ($attempt = 0; $attempt < 4; ++$attempt) {
         $row = mv_commerce_read($key);
         if (!$row || (int) $row['expires'] <= time()) {
@@ -53,7 +53,7 @@ function mv_commerce_otp_verify(string $phone, string $code): bool {
         if (empty($data['digest']) || $data['attempts'] >= 5) {
             return false;
         }
-        $matches = hash_equals($data['digest'], mv_commerce_otp_digest($phone, $data['id'], $code));
+        $matches = hash_equals($data['digest'], mv_commerce_otp_digest($phone, $data['id'], $code, $scope));
         ++$data['attempts'];
         if ($matches) {
             $data['digest'] = '';
@@ -73,7 +73,8 @@ function mv_commerce_find_customer(string $phone): int {
         'fields' => 'ID',
         'number' => 2,
     ]);
-    return count($users) === 1 && !user_can($users[0], 'edit_users') ? (int) $users[0] : 0;
+    return count($users) === 1 && !user_can($users[0], 'edit_users')
+        && !mv_commerce_is_manager((int) $users[0]) ? (int) $users[0] : 0;
 }
 
 function mv_commerce_user_for_verified_phone(string $phone, string $password) {

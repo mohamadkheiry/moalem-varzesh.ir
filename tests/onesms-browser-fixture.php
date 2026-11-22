@@ -29,7 +29,7 @@ add_filter('pre_http_request', static function ($pre, array $config, string $url
         return new WP_Error('local_mock_blocked');
     }
     preg_match('/[0-9]{6}/', $payload['body'] ?? '', $code);
-    if (isset($code[0]) && str_contains($payload['body'], 'کد ورود')) {
+    if (isset($code[0]) && (str_contains($payload['body'], 'کد ورود') || str_contains($payload['body'], 'کد تأیید شمارهٔ ورود مدیر'))) {
         file_put_contents($fixture['capture'], $code[0], LOCK_EX);
     }
     if (!empty($fixture['orderCapture']) && str_contains($payload['body'] ?? '', 'سفارش')) {

@@ -49,6 +49,7 @@ $other = '0901' . substr($phone, 4);
 $ip = 'local-test-' . $phone;
 $order = null;
 $manager_orders = [];
+$otp_managers = [];
 $user_id = 0;
 $keys = [
     mv_commerce_key('otp', $phone), mv_commerce_key('otp', $other),
@@ -218,6 +219,75 @@ try {
     $public_contact_phone = '';
     $check(!str_contains($contact_body(), 'href="tel:') && mv_commerce_manager_phone() === $new_manager,
         'blank public contact hides call link while retaining the SMS recipient');
+
+    $check(mv_commerce_manager_for_phone($new_manager) === null,
+        'an order alert number does not establish a manager login');
+    foreach (['administrator', 'shop_manager'] as $role) {
+        $id = wp_insert_user([
+            'user_login' => 'mv-otp-qa-' . strtolower(wp_generate_password(12, false, false)),
+            'user_pass' => wp_generate_password(24),
+            'role' => $role,
+        ]);
+        if (is_wp_error($id)) {
+            throw new RuntimeException('Could not create local OTP test manager.');
+        }
+        $otp_managers[$role] = $id;
+        $check(mv_commerce_is_manager($id), "OTP is available to $role");
+    }
+    $admin = $otp_managers['administrator'];
+    $shop_manager = $otp_managers['shop_manager'];
+    $manager_ip = 'manager-test-' . $phone;
+    foreach (['otp-send-ip', 'manager-request-ip', 'manager-verify-ip'] as $limit) {
+        $keys[] = mv_commerce_key($limit, $manager_ip);
+    }
+    $session = wp_generate_password(32, false, false);
+    $enrollment = mv_commerce_manager_enrollment_scope($shop_manager, $session);
+    $keys[] = mv_commerce_key($enrollment, $other);
+    $check(mv_commerce_otp_request($other, $manager_ip, $enrollment, 'کد تأیید شمارهٔ ورود مدیر') === true,
+        'send a purpose-specific manager enrollment OTP');
+    $enrollment_code = $sent_code();
+    $check(!mv_commerce_verify_manager_enrollment($shop_manager, 'different-session', $other, $enrollment_code),
+        'manager enrollment OTP is tied to the authenticated session');
+    $check(!mv_commerce_verify_manager_enrollment($admin, $session, $other, $enrollment_code),
+        'manager enrollment OTP is tied to its account');
+    $check(mv_commerce_verify_manager_otp($other, $enrollment_code, $manager_ip) === 0,
+        'an enrollment OTP cannot sign in');
+    $check(mv_commerce_verify_manager_enrollment($shop_manager, $session, $other, $enrollment_code),
+        'verified manager enrollment creates a phone binding');
+    $check(!mv_commerce_verify_manager_enrollment($shop_manager, $session, $other, $enrollment_code),
+        'manager enrollment OTP cannot be replayed');
+    $check(!mv_commerce_set_manager_identity($admin, $other) && !mv_commerce_set_manager_identity($user_id, $phone),
+        'duplicate manager phones and customer manager bindings are rejected');
+    $check(mv_commerce_set_manager_identity($admin, $phone), 'a separate administrator phone binding is supported');
+
+    $buyer = get_userdata($user_id);
+    $buyer->add_cap('manage_woocommerce');
+    $check(mv_commerce_find_customer($phone) === 0, 'privileged customer accounts cannot authenticate through customer OTP');
+    $buyer->remove_cap('manage_woocommerce');
+
+    foreach ([$other => $shop_manager, $phone => $admin] as $mobile => $actor) {
+        $identity = mv_commerce_manager_for_phone($mobile);
+        $keys[] = mv_commerce_key(mv_commerce_manager_login_scope($identity), $mobile);
+        $before = count($requests);
+        mv_commerce_request_manager_otp($mobile, $manager_ip);
+        $login_code = $sent_code();
+        $check(count($requests) === $before + 1 && end($requests)['body']['to'] === [$mobile]
+            && str_contains(end($requests)['body']['body'], 'کد ورود مدیر'), 'manager login code is addressed to the verified phone');
+        $wrong = $login_code === '111111' ? '111112' : '111111';
+        $check(mv_commerce_verify_manager_otp($mobile, $wrong, $manager_ip) === 0, 'wrong manager login code is rejected');
+        $check(mv_commerce_verify_manager_otp($mobile, $login_code, $manager_ip) === $actor,
+            'manager OTP authenticates the existing WordPress account');
+        $check(mv_commerce_verify_manager_otp($mobile, $login_code, $manager_ip) === 0,
+            'manager login OTP cannot be replayed');
+    }
+    $before = count($requests);
+    mv_commerce_request_manager_otp($new_manager, $manager_ip);
+    $check(count($requests) === $before, 'an unverified number does not receive a manager login SMS');
+    get_userdata($shop_manager)->set_role('customer');
+    $check(mv_commerce_manager_identity($shop_manager) === null && mv_commerce_manager_for_phone($other) === null,
+        'demotion removes the manager login phone');
+    $check(mv_commerce_set_manager_identity($admin, '') && mv_commerce_manager_for_phone($phone) === null,
+        'manager OTP can be revoked');
 } catch (Throwable $exception) {
     $error = $exception->getMessage();
 } finally {
@@ -227,8 +297,11 @@ try {
     foreach ($manager_orders as $manager_order) {
         $manager_order->delete(true);
     }
+    require_once ABSPATH . 'wp-admin/includes/user.php';
+    foreach ($otp_managers as $otp_manager) {
+        wp_delete_user($otp_manager);
+    }
     if ($user_id) {
-        require_once ABSPATH . 'wp-admin/includes/user.php';
         wp_delete_user($user_id);
     }
     foreach ($keys as $key) {

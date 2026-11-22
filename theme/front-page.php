@@ -1,16 +1,6 @@
 <?php get_header(); ?>
 <main id="main" class="wrap">
-    <section class="hero" aria-labelledby="home-title">
-        <picture>
-            <source media="(max-width: 767px)" srcset="<?php echo esc_url(get_theme_file_uri('assets/hero-mobile.webp')); ?>">
-            <img src="<?php echo esc_url(get_theme_file_uri('assets/hero.webp')); ?>" width="1600" height="687" alt="" fetchpriority="high" decoding="async">
-        </picture>
-        <div class="hero-copy">
-            <h1 id="home-title"><span>لباس و تجهیزات</span> <span>ورزشی</span></h1>
-            <p>پوشاک، کفش و لوازم تمرین</p>
-            <a class="button-primary" href="<?php echo esc_url(mv_shop_url()); ?>">مشاهده فروشگاه <?php mv_icon('arrow'); ?></a>
-        </div>
-    </section>
+    <?php get_template_part('template-parts/hero'); ?>
     <?php $terms = mv_top_categories(4); if ($terms) : ?>
     <section class="section" aria-labelledby="categories-title">
         <div class="section-head"><h2 id="categories-title">دسته‌بندی کالاها</h2></div>

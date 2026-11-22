@@ -18,6 +18,9 @@ add_action('after_setup_theme', 'mv_theme_setup');
 
 add_action('wp_enqueue_scripts', static function (): void {
     wp_enqueue_style('moalem-varzesh', get_stylesheet_uri(), [], wp_get_theme()->get('Version'));
+    if (is_front_page()) {
+        wp_enqueue_script('moalem-hero-slider', get_theme_file_uri('assets/hero-slider.js'), [], wp_get_theme()->get('Version'), ['strategy' => 'defer', 'in_footer' => true]);
+    }
 }, 20);
 
 function mv_icon(string $name): void {

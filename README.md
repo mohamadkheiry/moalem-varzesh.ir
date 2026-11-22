@@ -6,7 +6,7 @@
 
 نسخهٔ بررسی‌شده از WordPress 7.1.5، WooCommerce 11.3.1، PHP 8.2 و MariaDB 10.4 استفاده می‌کند. فایل‌های هسته، افزونه، پایگاه داده، حساب‌ها، سفارش‌ها و رمزها داخل مخزن قرار نگرفته‌اند.
 
-برای بازسازی، WordPress فارسی و WooCommerce را در یک نصب تازه فعال کنید. پوشهٔ theme را با نام moalem-varzesh داخل wp-content/themes قرار دهید. در اجرای محلی WP_ENVIRONMENT_TYPE را روی local و DISABLE_WP_CRON را روی true تنظیم کنید. فرمان‌ها از ریشهٔ مخزن و در PowerShell اجرا می‌شوند.
+برای بازسازی، WordPress فارسی و WooCommerce را در یک نصب تازه فعال کنید. پوشهٔ theme را با نام moalem-varzesh داخل wp-content/themes و پوشهٔ plugins/moalem-commerce را داخل wp-content/plugins قرار دهید. در اجرای محلی WP_ENVIRONMENT_TYPE را روی local و DISABLE_WP_CRON را روی true تنظیم کنید. فرمان‌ها از ریشهٔ مخزن و در PowerShell اجرا می‌شوند.
 
 ~~~powershell
 $wpPath = 'C:\path\to\wordpress'
@@ -14,6 +14,7 @@ python scripts/fetch-media.py runtime/media
 # ساخت سریع بندانگشتی WebP در صورت نصب Pillow
 python scripts/prepare-media.py runtime/media
 wp --path=$wpPath plugin activate woocommerce
+wp --path=$wpPath plugin activate moalem-commerce
 wp --path=$wpPath theme activate moalem-varzesh
 wp --path=$wpPath eval-file scripts/setup.php
 wp --path=$wpPath eval-file scripts/import-editorial.php
@@ -24,6 +25,27 @@ wp --path=$wpPath eval-file scripts/local-checkout.php
 ~~~
 
 در XAMPP می‌توان PHP و MariaDB اختصاصی برنامه را پس از نصب با scripts/start-local.ps1 -Runtime C:\path\to\runtime راه انداخت. پوشهٔ Runtime باید حاوی wordpress و mariadb پیکربندی‌شده باشد. آدرس پیش‌فرض http://127.0.0.1:8087/ است.
+
+## ساخت تصاویر شفاف کالاها
+
+فرایند برش، فایل اصلی هر عکس و شناسهٔ رسانهٔ وردپرس را نگه می‌دارد. ابتدا فایل اصلی با کیفیت ۸۰۰ پیکسل و سه اندازهٔ کوچک‌تر ساخته و اعتبارسنجی می‌شود. سپس نگاره‌های شاخص، گالری و تصویرهای گزینه‌های کالا از همان شناسه‌ها، نسخهٔ شفاف را دریافت می‌کنند. برش‌های دستی و تصویرهای تخت مانند راهنمای اندازه در catalog/cutout-overrides.json ثبت شده‌اند تا نوشته و جزئیات آن‌ها حفظ شود.
+
+~~~powershell
+python -m pip install Pillow numpy onnxruntime
+curl.exe -fL https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx -o runtime/u2net.onnx
+python scripts/prepare-cutouts.py --model runtime/u2net.onnx --source runtime/media --output runtime/cutouts
+python tests/media-alpha.py runtime/cutouts
+wp --path=$wpPath eval-file scripts/apply-cutouts.php runtime/cutouts
+wp --path=$wpPath eval-file scripts/apply-cutouts.php runtime/cutouts verify
+~~~
+
+مدل [U²-Net](https://github.com/xuebinqin/U-2-Net) روی رایانه اجرا می‌شود. هر خروجی موفق ذخیره می‌شود تا اجرای دوباره از آن استفاده کند. فهرست کامل تصویرها برای به‌روزرسانی کتابخانهٔ رسانه لازم است.
+
+## ورود با موبایل و پیامک سفارش
+
+در حساب کاربری فروشگاه، مشتری با موبایل و رمز عبور وارد می‌شود. شمارهٔ تأییدشده با کد پیامکی، شناسهٔ ورود است. مشتری می‌تواند در همان فرم تأیید، رمز عبور تازه‌ای هم انتخاب کند. در صورت انتقال حساب‌های قدیمی، تطبیق شمارهٔ حساب باید با تأیید مالک آن انجام شود. شمارهٔ صورتحساب به‌تنهایی مالکیت یک حساب قدیمی را ثابت نمی‌کند.
+
+مقادیر `MV_ONESMS_KEY` و `MV_ONESMS_FROM` را در محیط اجرای PHP یا پیکربندی خصوصی خارج از پوشهٔ عمومی و مخزن تعریف کنید. اگر وردپرس درخواست‌های خارجی را محدود می‌کند، دسترسی HTTPS به `connect.onesms.ir` را در `WP_ACCESSIBLE_HOSTS` مجاز کنید. پیام ثبت، تکمیل و لغو سفارش از شمارهٔ موبایل صورتحساب استفاده می‌کند. نتیجهٔ درخواست در یادداشت خصوصی سفارش ثبت می‌شود و هر رویداد یک‌بار درخواست ارسال می‌سازد.
 
 ## داده‌های منتقل‌شده
 
@@ -42,6 +64,7 @@ wp --path=$wpPath eval-file scripts/local-checkout.php
 
 ~~~powershell
 wp --path=$wpPath eval-file tests/catalog-audit.php
+wp --path=$wpPath eval-file tests/commerce.php
 npm ci
 npx playwright install chromium
 npm test
@@ -49,7 +72,9 @@ npm test
 
 برای مرورگر نصب‌شده روی ویندوز می‌توان MV_CHROME را روی مسیر فایل Chrome قرار داد. آزمون‌های مرورگر فقط به سایت محلی متصل می‌شوند و مسیر صفحهٔ اول، نمایش موبایل، فهرست کالا، جست‌وجو، انتخاب گزینه، کالای ناموجود، سبد، تسویهٔ آزمایشی و سئو را بررسی می‌کنند. خروجی تصویری در test-results یا مسیر مشخص‌شده با MV_QA_OUTPUT ساخته می‌شود.
 
-فونت وزیرمتن با مجوز OFL در theme/assets/OFL.txt ارائه شده است. تصویر شاخص صفحهٔ اول با ImageGen برای این قالب ساخته شده است.
+برای دو سناریوی مرورگری پیامک، فایل WP-CLI یعنی `cli.phar` را کنار پوشهٔ `wordpress` در Runtime بگذارید و `tests/run-onesms-browser.ps1 -Runtime C:\path\to\runtime` را اجرا کنید. این اسکریپت فقط برای وردپرس محلی است و جایگزین موقت سرویس پیامک و داده‌های آزمون را پس از اجرا پاک می‌کند.
+
+فونت وزیرمتن با مجوز OFL در theme/assets/OFL.txt ارائه شده است. سه تصویر شفاف اسلایدر با ImageGen برای این قالب ساخته شده‌اند. انتخاب دستی، مکث و تنظیم کاهش حرکت دستگاه در مرورگر آزموده شده‌اند.
 
 ## اپ موبایل
 

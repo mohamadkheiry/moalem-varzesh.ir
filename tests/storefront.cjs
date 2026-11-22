@@ -91,6 +91,13 @@ const cases = [
                     return box.width >= 44 && box.height >= 44 && box.left >= frame.left && box.right <= frame.right;
                 });
             }), 'Slider controls fit at width ' + width);
+            assert.ok(await page.locator('.hero-controls').evaluate(controls => {
+                const active = controls.getBoundingClientRect().height;
+                controls.hidden = true;
+                const hidden = controls.getBoundingClientRect().height;
+                controls.hidden = false;
+                return active === hidden;
+            }), 'Slider reserves the control space before JavaScript starts');
             if (width === 375) {
                 const mobileHero = await page.locator('.hero-slide.is-active img').evaluate(async img => {
                     await img.decode();
@@ -395,7 +402,7 @@ const cases = [
         assert.match(response.headers()['content-type'], /^image\/webp/);
     }],
     ['16', 'ثبت خرید آزمایشی و پیامک همان سفارش', async page => {
-        const fixture = await loadSmsFixture(page, '/shop/');
+        const fixture = await loadSmsFixture(page, '/shop/?mv-qa=1');
         assert.ok(fixture.orderCapture && fixture.email.endsWith('@example.test'));
         await putSimpleInCart(page);
         await page.locator('a.checkout-button').click();
@@ -695,6 +702,9 @@ const cases = [
     }],
     ['23', 'مدیریت متن و تصویر صفحه، رنگ فوتر و منوی وردپرس', async page => {
         const fixture = JSON.parse(readFileSync(process.env.MV_SUPPORT_ADMIN_FIXTURE, 'utf8'));
+        const guestAbout = () => fetch(base + '/about-us/', { headers: { Accept: 'text/html' } }).then(response => response.text());
+        await guestAbout();
+        await guestAbout();
         await page.goto(base + '/wp-login.php', { waitUntil: 'domcontentloaded' });
         await page.locator('#user_login').fill(fixture.user);
         await page.locator('#user_pass').fill(fixture.password);
@@ -728,14 +738,20 @@ const cases = [
         assert.match(await page.locator('.mv-support-hero').getAttribute('style'), /#6a4141/);
         assert.equal(await page.locator('.mv-support-hero p').innerText(), 'معرفی موقت برای آزمون صفحه');
         assert.equal(await page.locator('.mv-footer-brand p').innerText(), 'معرفی موقت برای آزمون فوتر');
+        assert.match(await guestAbout(), /معرفی موقت برای آزمون فوتر/);
         assert.ok((await page.locator('.mv-support-hero img').getAttribute('src')).includes('/uploads/'));
         await page.goto(base + settingsPath, { waitUntil: 'domcontentloaded' });
         assert.equal(await cover.inputValue(), attachment);
         await card.locator('[data-reset-image]').click();
         assert.equal(await cover.inputValue(), '0');
-        await admin.locator('input[type="submit"]').click();
-        await page.waitForURL(/settings-updated=true/);
+        const [reset] = await Promise.all([
+            page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === '/wp-admin/options.php'),
+            admin.locator('input[type="submit"]').click(),
+        ]);
+        assert.equal(reset.status(), 302);
+        assert.match(await guestAbout(), /src="[^"]*\/assets\/support\/about-1200\.webp"/);
         await page.goto(base + settingsPath, { waitUntil: 'domcontentloaded' });
+        assert.equal(await cover.inputValue(), '0');
         await admin.locator('.mv-support-admin-menus a').first().click();
         await page.waitForURL(/nav-menus.php\?menu=/);
         const menuItem = page.locator('#menu-item-' + fixture.item);
@@ -744,6 +760,7 @@ const cases = [
         await page.locator('#save_menu_footer').click();
         await go(page, '/about-us/');
         assert.ok(await page.locator('.site-footer').getByRole('link', { name: 'پیوند موقت آزمون فوتر' }).isVisible());
+        assert.match(await guestAbout(), /پیوند موقت آزمون فوتر/);
         assert.match(await page.locator('.mv-support-hero img').getAttribute('src'), /\/assets\/support\/about-1200.webp$/);
     }],
 ];

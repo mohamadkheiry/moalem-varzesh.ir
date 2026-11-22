@@ -177,23 +177,15 @@ add_action('wp_head', static function (): void {
     if (!is_singular() && $canonical) {
         printf("<link rel=\"canonical\" href=\"%s\">\n", esc_url($canonical));
     }
-    if (is_singular(['product', 'post'])) {
-        printf("<meta property=\"og:type\" content=\"%s\">\n", is_singular('post') ? 'article' : 'product');
-        if (has_post_thumbnail(get_queried_object_id())) {
-            printf("<meta property=\"og:image\" content=\"%s\">\n", esc_url(get_the_post_thumbnail_url(get_queried_object_id(), 'large')));
+    if ($canonical) {
+        $type = is_singular('post') ? 'article' : (is_singular('product') ? 'product' : 'website');
+        printf("<meta property=\"og:type\" content=\"%s\">\n", esc_attr($type));
+        printf("<meta property=\"og:locale\" content=\"%s\">\n", esc_attr(get_locale()));
+        if ($image = mv_share_image()) {
+            printf("<meta property=\"og:image\" content=\"%s\">\n", esc_url($image));
         }
     }
 }, 5);
-
-add_filter('wp_robots', static function (array $robots): array {
-    $commerce_private = function_exists('is_cart') && (is_cart() || is_checkout() || is_account_page());
-    $filtered = isset($_GET['orderby']) || isset($_GET['min_price']) || isset($_GET['max_price']);
-    if ($commerce_private || $filtered) {
-        unset($robots['index']);
-        $robots['noindex'] = true;
-    }
-    return $robots;
-});
 
 add_filter('woocommerce_currencies', static function (array $currencies): array {
     $currencies['IRT'] = 'تومان ایران';
@@ -211,4 +203,6 @@ require_once __DIR__ . '/print-options.php';
 require_once __DIR__ . '/editorial.php';
 require_once __DIR__ . '/storefront.php';
 require_once __DIR__ . '/support.php';
+require_once __DIR__ . '/performance.php';
+require_once __DIR__ . '/search-visibility.php';
 require_once __DIR__ . '/mobile-store.php';

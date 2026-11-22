@@ -20,7 +20,7 @@ $guides = get_posts([
                 <article class="mv-home-guide">
                     <a href="<?php echo esc_url(get_permalink($guide)); ?>">
                         <div class="mv-home-guide-image" aria-hidden="true">
-                            <?php mv_guide_image($guide->ID, 'medium_large', '(min-width: 768px) 30vw, 90vw'); ?>
+                            <?php mv_guide_image($guide->ID, 'woocommerce_thumbnail', '(min-width: 768px) 230px, 48vw'); ?>
                         </div>
                         <div class="mv-home-guide-copy">
                             <p class="mv-home-guide-topic"><?php echo esc_html($topics[$guide->post_name]); ?></p>

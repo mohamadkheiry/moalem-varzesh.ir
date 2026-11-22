@@ -84,6 +84,13 @@ const cases = [
             assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Overflow at width ' + width);
             assert.ok(await page.getByRole('button', { name: 'جست‌وجو', exact: true }).boundingBox().then(box => box.width >= 44));
             assert.ok(await page.getByRole('button', { name: 'تصویر بعدی' }).boundingBox().then(box => box.width >= 44 && box.height >= 44));
+            assert.ok(await page.locator('.hero-controls').evaluate(controls => {
+                const frame = controls.closest('.hero').getBoundingClientRect();
+                return [...controls.querySelectorAll('button')].every(button => {
+                    const box = button.getBoundingClientRect();
+                    return box.width >= 44 && box.height >= 44 && box.left >= frame.left && box.right <= frame.right;
+                });
+            }), 'Slider controls fit at width ' + width);
             if (width === 375) {
                 const mobileHero = await page.locator('.hero-slide.is-active img').evaluate(async img => {
                     await img.decode();
@@ -220,10 +227,13 @@ const cases = [
             assert.ok((await page.locator('main article').innerText()).trim().length > 30);
         }
     }],
-    ['11', 'حرکت دستی، گردش خودکار و توقف اسلایدر', async page => {
+    ['11', 'شش تصویر اسلایدر، پیمایش دستی و گردش خودکار', async page => {
         await page.clock.install();
         await go(page, '/');
         await page.getByRole('button', { name: 'توقف حرکت خودکار' }).waitFor();
+        assert.equal(await page.locator('.hero-slide').count(), 6);
+        assert.equal(await page.locator('.hero-dot').count(), 6);
+        assert.equal(await page.locator('.hero-slide img[src]').count(), 1);
         await page.clock.runFor(7100);
         await page.locator('.hero-slide-boots.is-active').waitFor();
         await page.getByRole('button', { name: 'توقف حرکت خودکار' }).click();
@@ -234,11 +244,42 @@ const cases = [
         await page.locator('.hero-slide-ball.is-active').waitFor();
         assert.equal(await page.getByRole('button', { name: 'توپ فوتبال', exact: true }).getAttribute('aria-pressed'), 'true');
         assert.equal(await page.locator('[data-hero-announcement]').textContent(), 'توپ فوتبال');
-        await page.getByRole('button', { name: 'تصویر بعدی' }).click();
-        await page.locator('.hero-slide-jersey.is-active').waitFor();
+        const next = page.getByRole('button', { name: 'تصویر بعدی' });
+        const addedSlides = [['gloves', 'دستکش دروازه‌بانی'], ['guards', 'ساق‌بند فوتبال'], ['socks', 'جوراب ورزشی']];
+        for (const [key, label] of addedSlides) {
+            await next.click();
+            const image = page.locator('.hero-slide-' + key + '.is-active img');
+            const desktop = await image.evaluate(async img => {
+                await img.decode();
+                return { src: img.currentSrc, width: img.naturalWidth };
+            });
+            assert.ok(desktop.src.endsWith('/hero-' + key + '-780.webp'));
+            assert.equal(desktop.width, 780);
+            assert.equal(await page.locator('.hero-dot[aria-pressed="true"]').getAttribute('aria-label'), label);
+            const asset = await page.request.get(desktop.src);
+            assert.ok(asset.ok());
+            assert.ok((await asset.body()).length < 200000);
+            await page.locator('.hero').screenshot({ path: resolve(evidence, 'hero-' + key + '-desktop.png'), animations: 'disabled' });
+        }
         await page.getByRole('button', { name: 'شروع حرکت خودکار' }).click();
         await page.clock.runFor(8000);
-        await page.locator('.hero-slide-boots.is-active').waitFor();
+        await page.locator('.hero-slide-jersey.is-active').waitFor();
+        await page.getByRole('button', { name: 'تصویر قبلی' }).click();
+        await page.locator('.hero-slide-socks.is-active').waitFor();
+        await next.click();
+        await page.locator('.hero-slide-jersey.is-active').waitFor();
+        await page.setViewportSize({ width: 390, height: 900 });
+        for (const [key, label] of addedSlides) {
+            await page.getByRole('button', { name: label, exact: true }).click();
+            const image = page.locator('.hero-slide-' + key + '.is-active img');
+            const mobile = await image.evaluate(async img => {
+                await img.decode();
+                return { src: img.currentSrc, width: img.naturalWidth };
+            });
+            assert.ok(mobile.src.endsWith('/hero-' + key + '-420.webp'));
+            assert.equal(mobile.width, 420);
+        }
+        await page.locator('.hero').screenshot({ path: resolve(evidence, 'hero-socks-mobile.png'), animations: 'disabled' });
     }],
     ['12', 'کاهش حرکت براساس تنظیمات دستگاه و کنترل با صفحه‌کلید', async page => {
         await page.emulateMedia({ reducedMotion: 'reduce' });

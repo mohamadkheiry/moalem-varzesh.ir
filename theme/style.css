@@ -1,7 +1,7 @@
 /*
 Theme Name: Moalem Varzesh
 Description: قالب فارسی سبک فروشگاه معلم ورزش برای ووکامرس
-Version: 1.5.1
+Version: 1.6.0
 Requires at least: 7.0
 Requires PHP: 8.1
 Text Domain: moalem-varzesh
@@ -282,8 +282,10 @@ button, input, select, textarea { font: inherit; }
     z-index: 2;
     grid-area: controls;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
+    column-gap: .6rem;
     padding-block: .3rem .75rem;
     padding-inline: .5rem;
 }
@@ -306,7 +308,7 @@ button, input, select, textarea { font: inherit; }
 .hero-control svg { width: 1.2rem; height: 1.2rem; }
 .hero-previous svg { transform: scaleX(-1); }
 .hero-control:focus-visible, .hero-dot:focus-visible { outline-color: var(--lime); }
-.hero-toggle { margin-inline-start: .45rem; }
+.hero-transport { display: flex; gap: .35rem; }
 .hero-toggle .hero-play, .hero-toggle[data-paused="true"] .hero-pause { display: none; }
 .hero-toggle[data-paused="true"] .hero-play { display: block; }
 .hero-indicators { display: flex; }
@@ -848,7 +850,7 @@ button, input, select, textarea { font: inherit; }
     }
     .hero-slide img { max-height: min(94%, 36rem); }
     .hero-slide-ball img { max-height: 82%; }
-    .hero-controls { justify-content: flex-start; padding: 1.2rem clamp(1.15rem, 5vw, 4.4rem) clamp(1.45rem, 3vw, 2.5rem); }
+    .hero-controls { justify-content: flex-start; padding: 1.2rem .75rem clamp(1.45rem, 3vw, 2.5rem); padding-inline-start: clamp(1.15rem, 5vw, 4.4rem); }
     .hero h1 { font-size: clamp(2.35rem, 4.3vw, 4.7rem); }
     .hero p { margin: .68rem 0 1.03rem; font-size: clamp(1.04rem, 1.7vw, 1.38rem); }
     .hero .button-primary { min-height: 3.15rem; padding-inline: 1.2rem; font-size: .98rem; }

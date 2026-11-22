@@ -23,7 +23,7 @@
                 </div>
                 <?php if (has_post_thumbnail()) : ?>
                     <figure class="guide-hero-image">
-                        <?php mv_guide_image($id, 'large', '(min-width: 768px) 44vw, 92vw', true); ?>
+                        <?php mv_guide_image($id, 'large', '(min-width: 96rem) 668px, (min-width: 48rem) 44vw, 92vw', true); ?>
                     </figure>
                 <?php endif; ?>
             </header>

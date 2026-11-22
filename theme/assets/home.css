@@ -44,9 +44,11 @@
 }
 .mv-home-guide > a { display: grid; height: 100%; color: inherit; text-decoration: none; border-radius: inherit; overflow: hidden; }
 .mv-home-guide-image { position: relative; aspect-ratio: 2 / 1; overflow: hidden; background: #e5eee8; }
+.mv-home-guide-image:has(.mv-guide-photograph) { aspect-ratio: 3 / 2; }
 .mv-home-guide:nth-child(2) .mv-home-guide-image { background: #f2ebdf; }
 .mv-home-guide:nth-child(3) .mv-home-guide-image { background: #e4ecf0; }
 .mv-home-guide-image img { position: absolute; inset: 0; width: 100%; height: 100%; padding: .55rem; object-fit: contain; }
+.mv-home-guide-image .mv-guide-photograph { padding: 0; object-fit: cover; }
 .mv-home-guide-copy { padding: .82rem 1rem 1.05rem; }
 .mv-home-guide-copy h3 { margin: 0; font-size: clamp(1rem, 1.5vw, 1.23rem); line-height: 1.6; }
 .mv-home-guide-topic { margin: 0 0 .26rem; color: var(--green); font-size: .78rem; font-weight: 760; }

@@ -35,7 +35,8 @@ $categories = get_categories(['hide_empty' => true]);
                 <article <?php post_class($feature ? 'guide-card guide-feature' : 'guide-card'); ?>>
                     <a class="guide-card-image" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
                         <?php mv_guide_image($id, $feature ? 'large' : 'woocommerce_thumbnail',
-                            $feature ? '(min-width: 768px) 44vw, 90vw' : '(min-width: 768px) 235px, 55vw', $feature); ?>
+                            $feature ? '(min-width: 96rem) 712px, (min-width: 630px) 47vw, 92vw'
+                                : '(min-width: 96rem) 465px, (min-width: 64rem) 31vw, (min-width: 630px) 46vw, 92vw', $feature); ?>
                     </a>
                     <div class="guide-card-content">
                         <h2><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h2>

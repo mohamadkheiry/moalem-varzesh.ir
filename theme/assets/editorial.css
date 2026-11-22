@@ -33,11 +33,13 @@
     display: grid;
     place-items: center;
     min-height: 10rem;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: var(--guide-card-photo-ratio, 16 / 9);
     overflow: hidden;
     background: radial-gradient(ellipse at 49% 64%, #fcfcf7, #e7eddf 86%);
 }
+.guide-card-image:has(.mv-guide-photograph) { --guide-card-photo-ratio: 3 / 2; }
 .guide-card-image img { display: block; width: 100%; height: 100%; max-height: 18rem; object-fit: contain; }
+.guide-card-image .mv-guide-photograph { max-height: none; object-fit: cover; }
 .guide-card-content { padding: 1rem clamp(1rem, 2.5vw, 1.4rem) 1.25rem; }
 .guide-card h2 { margin: 0 0 .52rem; font-size: clamp(1.08rem, 2.4vw, 1.32rem); }
 .guide-card h2 a { text-decoration: none; }
@@ -79,6 +81,8 @@
     background: radial-gradient(ellipse, #f9faf4, #dbe7d4 88%);
 }
 .guide-hero-image img { display: block; width: 100%; max-height: 15rem; object-fit: contain; }
+.guide-hero-image:has(.mv-guide-photograph) { position: relative; width: 100%; aspect-ratio: 3 / 2; }
+.guide-hero-image .mv-guide-photograph { position: absolute; inset: 0; height: 100%; max-height: none; object-fit: cover; }
 .guide-layout { display: grid; gap: 1.25rem; padding-block: clamp(1rem, 4vw, 3.75rem); }
 .guide-body { width: min(100%, 69ch); margin-inline: auto; overflow-wrap: anywhere; font-size: 1.03rem; line-height: 2.05; }
 .guide-body h2, .guide-body h3 { margin-block: 1.65em .5em; scroll-margin: 1.4rem; }
@@ -86,6 +90,7 @@
 .guide-body :is(ol, ul) { padding-inline-start: 1.4rem; }
 .guide-body :is(figure, table) { max-width: 100%; }
 .guide-body img { height: auto; border-radius: .8rem; }
+.guide-body img[src*="/mv-guide-visuals/"] { display: block; margin-block: 1.3rem; }
 .guide-body :is(table, pre) { display: block; overflow-x: auto; }
 .guide-body a, .guide-outline a { color: var(--green); }
 .guide-outline, .guide-product-links {
@@ -107,13 +112,15 @@
 @media (min-width: 630px) {
     .guide-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .guide-feature { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
-    .guide-feature .guide-card-image { order: 2; aspect-ratio: 16 / 8; }
+    .guide-feature .guide-card-image { order: 2; aspect-ratio: var(--guide-card-photo-ratio, 16 / 8); }
     .guide-feature .guide-card-image img { max-height: 23rem; }
+    .guide-feature .guide-card-image .mv-guide-photograph { max-height: none; }
     .guide-feature h2 { font-size: clamp(1.4rem, 3.5vw, 2.65rem); }
 }
 @media (min-width: 768px) {
-    .guide-header:has(.guide-hero-image) { grid-template-columns: 1.13fr 1fr; }
+    .guide-header:has(.guide-hero-image) { grid-template-columns: minmax(0, 1.13fr) minmax(0, 1fr); }
     .guide-hero-image { min-height: 100%; }
+    .guide-hero-image:has(.mv-guide-photograph) { min-height: 0; align-self: stretch; }
     .guide-hero-image img { max-height: 26rem; }
 }
 @media (min-width: 1360px) {

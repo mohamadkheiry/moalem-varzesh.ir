@@ -92,6 +92,8 @@ wp --path=$wpPath eval-file scripts/apply-cutouts.php runtime/cutouts verify
 
 متن ۱۰۰ راهنمای تألیفی در پوشهٔ catalog/guides و معرفی موضوع‌ها در catalog/guide-topics.json است. هنگام وارد کردن، شناسه‌های محصولات مبدأ به محصولات همین وردپرس تبدیل می‌شوند. هر راهنما تصویر شاخص و پیوندهای مرتبط محلی دارد. هفت مقالهٔ قبلی نیز با حفظ نشانی و متن، از نظر رسانه و پیوند داخلی بازبینی می‌شوند.
 
+عکس‌های تحریریه برای موضوع هر مقاله ساخته شده‌اند و در `catalog/guide-images` به صورت WebP نگهداری می‌شوند. متن جایگزین فارسی هر عکس و نگاشت تصاویر درون مقاله در `catalog/guide-visuals.json` است. واردکننده تصویر شاخص و اندازه‌های مناسب برای موبایل، دسکتاپ و فهرست مقاله‌ها را در کتابخانهٔ رسانهٔ وردپرس ثبت می‌کند.
+
 این فرمان‌ها را پس از وارد کردن کاتالوگ و کتابخانهٔ رسانه اجرا کنید.
 
 ~~~powershell
@@ -99,9 +101,12 @@ wp --path=$wpPath eval-file scripts/apply-catalog-seo.php
 python scripts/fetch-editorial-media.py runtime/editorial
 wp --path=$wpPath eval-file scripts/repair-source-editorial.php runtime/editorial
 wp --path=$wpPath eval-file scripts/import-guides.php
+wp --path=$wpPath eval-file scripts/import-guide-images.php
 wp --path=$wpPath eval-file tests/editorial-audit.php runtime/editorial-audit.json
 node tests/editorial-http.cjs runtime/editorial-audit.json
 ~~~
+
+برای ساخت اندازه‌های مختلف WebP، پشتیبانی GD یا Imagick باید در PHP خط فرمان فعال باشد. در نصب محلی XAMPP می‌توان واردکننده را با `php -d extension=gd cli.phar --path=$wpPath eval-file scripts/import-guide-images.php` اجرا کرد.
 
 ## آزمون‌ها
 

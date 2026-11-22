@@ -9,7 +9,12 @@ function mv_guides_url(): string {
 function mv_guide_image(int $id, string $size, string $sizes, bool $primary = false): void {
     $alt = get_post_meta($id, '_mv_editorial_image_alt', true);
     $options = ['sizes' => $sizes, 'loading' => $primary ? 'eager' : 'lazy', 'decoding' => 'async'];
-    if ($alt !== '') {
+    if (get_post_meta(get_post_thumbnail_id($id), '_mv_guide_visual_key', true)) {
+        $options['class'] = 'mv-guide-photograph';
+        if ($size === 'woocommerce_thumbnail') {
+            $size = 'medium';
+        }
+    } elseif ($alt !== '') {
         $options['alt'] = $alt;
     }
     if ($primary) {

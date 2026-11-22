@@ -160,8 +160,10 @@ foreach ($guides as $guide) {
     update_post_meta($post_id, '_mv_seo_title', $guide['title']);
     update_post_meta($post_id, '_mv_seo_description', $guide['excerpt']);
     update_post_meta($post_id, '_mv_guide_product_ids', $guide['products']);
-    update_post_meta($post_id, '_mv_editorial_image_alt', $guide['image_alt']);
-    set_post_thumbnail($post_id, $guide['image']);
+    if (!get_post_meta(get_post_thumbnail_id($post_id), '_mv_guide_visual_key', true)) {
+        update_post_meta($post_id, '_mv_editorial_image_alt', $guide['image_alt']);
+        set_post_thumbnail($post_id, $guide['image']);
+    }
     $topic_posts[$guide['topic']][] = $post_id;
     foreach ($guide['products'] as $product) {
         $links[$product][] = $post_id;

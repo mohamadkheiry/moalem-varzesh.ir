@@ -497,6 +497,10 @@ const cases = [
         assert.equal(await page.locator('.guide-card').count(), 12);
         assert.equal(await page.locator('.guide-topics a').count(), 11);
         await page.locator('.guide-feature img').evaluate(img => img.decode());
+        assert.ok(await page.locator('.guide-card-image').evaluateAll(cards => cards.every(card => {
+            const photo = card.querySelector('img.mv-guide-photograph');
+            return photo && getComputedStyle(card).aspectRatio === '3 / 2' && photo.srcset.includes('480w');
+        })), 'Editorial card photos preserve the original framing and have a compact responsive size');
         await page.screenshot({ path: resolve(evidence, 'guides-desktop.png') });
         const article = await page.locator('.guide-feature h2 a').getAttribute('href');
         await go(page, '/blog/page/2/');
@@ -523,6 +527,14 @@ const cases = [
         await go(page, new URL(product, base).pathname);
         assert.ok(await page.locator('.mv-related-guides a').count() >= 1);
         assert.ok((await page.locator('meta[name=description]').getAttribute('content')).length > 25);
+        await go(page, '/school-sports-equipment-bulk-order/');
+        assert.ok(await page.locator('.guide-header').evaluate(header => {
+            const frame = header.getBoundingClientRect();
+            return [...header.children].every(child => {
+                const box = child.getBoundingClientRect();
+                return box.left >= frame.left && box.right <= frame.right && box.bottom <= frame.bottom;
+            });
+        }), 'A long headline and its photo fit within the same article header');
     }],
     ['20', 'چیدمان خرید و ورود، گام‌های خرید و کنترل تعداد و رمز عبور', async page => {
         const fits = async () => assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));

@@ -3,6 +3,17 @@ defined('WP_CLI') && WP_CLI || exit;
 
 $posts = get_posts(['post_type' => 'post', 'post_status' => 'publish', 'numberposts' => -1]);
 $products = get_posts(['post_type' => 'product', 'post_status' => 'publish', 'numberposts' => -1]);
+$catalog = dirname(__DIR__) . '/catalog';
+$visuals = json_decode(file_get_contents($catalog . '/guide-visuals.json'), true, 512, JSON_THROW_ON_ERROR);
+$source = json_decode(file_get_contents($catalog . '/editorial.json'), true, 512, JSON_THROW_ON_ERROR);
+$legacy = [];
+foreach ($source['posts'] as $article) {
+    $legacy[rawurldecode($article['slug'])] = 'legacy-' . $article['id'];
+}
+$inline = [];
+foreach ($visuals['inline'] as $asset => $image) {
+    $inline[$image['article']][$asset] = $image['alt'];
+}
 $errors = [];
 $entry = [];
 $article_titles = [];
@@ -17,7 +28,6 @@ $origin = wp_parse_url(home_url(), PHP_URL_HOST);
 foreach ($posts as $article) {
     $id = $article->ID;
     $url = get_permalink($id);
-    $entry[] = ['kind' => 'post', 'url' => $url];
     $title = get_post_meta($id, '_mv_seo_title', true);
     $description = get_post_meta($id, '_mv_seo_description', true);
     $featured = (int) get_post_thumbnail_id($id);
@@ -35,9 +45,38 @@ foreach ($posts as $article) {
         }
     }
     $guide = get_post_meta($id, '_mv_guide_key', true);
+    $key = $guide ?: ($legacy[rawurldecode($article->post_name)] ?? '');
+    $expected_alt = $visuals['covers'][$key] ?? '';
+    $metadata = wp_get_attachment_metadata($featured);
+    if (!$expected_alt || isset($photo_ids[$featured]) || get_post_meta($featured, '_mv_guide_visual_key', true) !== $key
+        || get_post_meta($featured, '_wp_attachment_image_alt', true) !== $expected_alt || get_post_mime_type($featured) !== 'image/webp'
+        || ($metadata['width'] ?? 0) !== 1200 || ($metadata['height'] ?? 0) !== 800
+        || empty($metadata['sizes']['mv_guide_card']) || empty($metadata['sizes']['medium_large']) || empty($metadata['sizes']['large'])) {
+        $errors[] = 'Missing, repeated or unoptimized editorial cover for ' . $key;
+    }
+    $photo_ids[$featured] = true;
+    $entry[] = ['kind' => 'post', 'url' => $url, 'hero' => wp_get_attachment_url($featured), 'alt' => $expected_alt];
+    if (isset($inline[$key])) {
+        $seen = [];
+        $images = new WP_HTML_Tag_Processor($article->post_content);
+        while ($images->next_tag('IMG')) {
+            $src = $images->get_attribute('src');
+            if (!$src || !$images->get_attribute('alt')) {
+                $errors[] = 'Missing inline image source or description in ' . $key;
+                continue;
+            }
+            foreach ($inline[$key] as $asset => $alt) {
+                if (str_contains($src, '/mv-guide-visuals/' . $asset . '-') && $images->get_attribute('alt') === $alt) {
+                    $seen[$asset] = true;
+                }
+            }
+        }
+        if (array_diff_key($inline[$key], $seen)) {
+            $errors[] = 'Missing illustrated steps in ' . $key;
+        }
+    }
     if ($guide) {
         ++$guides;
-        $photo_ids[$featured] = true;
         $categories = get_the_category($id);
         $topic = $categories[0]->slug ?? '';
         $topic_counts[$topic] = ($topic_counts[$topic] ?? 0) + 1;
@@ -85,7 +124,7 @@ if ($guides !== 100 || count($posts) !== 107 || count($topic_counts) !== 10 || a
 if ($errors) {
     WP_CLI::error(implode("\n", array_slice($errors, 0, 26)));
 }
-WP_CLI::success(sprintf('100 new guides, 7 repaired guides, 10 topics, %d distinct new guide images, %d–%d words per new guide, %d optimized products.',
+WP_CLI::success(sprintf('100 new guides, 7 repaired guides, 10 topics, %d distinct article covers, %d–%d words per new guide, %d optimized products.',
     count($photo_ids), min($words), max($words), count($products)));
 if (!empty($args[0])) {
     file_put_contents($args[0], wp_json_encode(['pages' => $entry, 'legacy_links' => array_values($legacy_links)], JSON_UNESCAPED_UNICODE));

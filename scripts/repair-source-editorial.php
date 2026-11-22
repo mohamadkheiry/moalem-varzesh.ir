@@ -150,10 +150,12 @@ foreach ($source['posts'] as $row) {
     if (!$cover && !has_post_thumbnail($post->ID) && $example_ids) {
         $cover = wc_get_product($example_ids[0])->get_image_id();
     }
-    if ($cover) {
-        set_post_thumbnail($post->ID, $cover);
+    if (!get_post_meta(get_post_thumbnail_id($post->ID), '_mv_guide_visual_key', true)) {
+        if ($cover) {
+            set_post_thumbnail($post->ID, $cover);
+        }
+        update_post_meta($post->ID, '_mv_editorial_image_alt', 'تصویر مرتبط با ' . wp_strip_all_tags($post->post_title));
     }
-    update_post_meta($post->ID, '_mv_editorial_image_alt', 'تصویر مرتبط با ' . wp_strip_all_tags($post->post_title));
     update_post_meta($post->ID, '_mv_guide_product_ids', $example_ids);
     update_post_meta($post->ID, '_mv_seo_title', wp_strip_all_tags($post->post_title));
     $original_excerpt = trim(wp_strip_all_tags($row['excerpt']));

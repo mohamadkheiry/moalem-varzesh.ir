@@ -16,7 +16,7 @@ function hasType(node, type) {
     return node['@type'] === type || Object.values(node).some(value => hasType(value, type));
 }
 
-async function inspect({ kind, url }) {
+async function inspect({ kind, url, hero, alt }) {
     const home = new URL(url);
     assert.equal(home.origin, endpoint.origin, 'Audit only executes against the local store.');
     const response = await fetch(url, { signal: AbortSignal.timeout(55000) });
@@ -45,6 +45,14 @@ async function inspect({ kind, url }) {
     } else {
         assert.ok(blocks.some(block => hasType(block, 'BlogPosting')), 'BlogPosting schema is missing');
         assert.ok(html.includes('guide-hero-image') && html.includes('guide-product-links'), 'Article has no photo or product links');
+        const cover = html.match(/<figure class="guide-hero-image">([\s\S]*?)<\/figure>/)?.[1] || '';
+        assert.ok(cover.includes('mv-guide-photograph') && cover.includes('srcset=') && cover.includes(`alt="${alt}"`),
+            'Missing responsive article photo or its description');
+        assert.ok(blocks.some(block => block['@type'] === 'BlogPosting' && block.image?.includes(hero)), 'Article schema has the wrong cover');
+        const media = await fetch(hero, { signal: AbortSignal.timeout(55000) });
+        assert.equal(media.status, 200, hero);
+        assert.match(media.headers.get('content-type'), /^image\/webp/);
+        assert.ok((await media.arrayBuffer()).byteLength <= 225 * 1024, 'Article cover exceeds its image budget');
     }
     titles.add(title);
     audited.add(relativeKey(url));

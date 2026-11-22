@@ -4,7 +4,8 @@ $mode = mv_commerce_account_mode();
 $phone = mv_commerce_phone(mv_commerce_field('mv_phone'));
 $session_phone = WC()->session ? (string) WC()->session->get('mv_otp_phone', '') : '';
 if ($mode !== 'login' && !$phone) {
-    $phone = $session_phone;
+    $retry_phone = $mode === 'otp' && WC()->session ? (string) WC()->session->get('mv_otp_retry_phone', '') : '';
+    $phone = $retry_phone ?: $session_phone;
 }
 $timing = $mode === 'verify' ? mv_commerce_account_otp_timing($phone) : null;
 $now = time();

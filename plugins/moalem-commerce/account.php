@@ -6,40 +6,46 @@ function mv_commerce_otp_digest(string $phone, string $challenge, string $code, 
 }
 
 function mv_commerce_otp_request(string $phone, string $ip, string $scope = 'otp', string $label = 'کد ورود') {
-    if (!mv_commerce_limit(mv_commerce_key('otp-send-ip', $ip), 8, 15 * MINUTE_IN_SECONDS)) {
-        return new WP_Error('otp_limit');
-    }
-
     $key = mv_commerce_key($scope, $phone);
     $now = time();
     $previous = mv_commerce_read($key);
-    $previous_data = $previous ? json_decode($previous['payload'], true) : [];
+    $previous_data = json_decode($previous['payload'] ?? '{}', true) ?: [];
     if (($previous_data['resend'] ?? 0) > $now) {
+        return new WP_Error('otp_cooldown');
+    }
+    $window = 15 * MINUTE_IN_SECONDS;
+    if (!mv_commerce_limit(mv_commerce_key('otp-send-ip', $ip), 8, $window)
+        || !mv_commerce_limit(mv_commerce_key($scope . '-send-phone', $phone), 8, $window)) {
         return new WP_Error('otp_limit');
     }
 
     $code = (string) random_int(100000, 999999);
     $challenge = bin2hex(random_bytes(16));
+    // Reserve the send while the provider responds. The new code cannot be used yet.
     $data = [
         'id' => $challenge,
-        'digest' => mv_commerce_otp_digest($phone, $challenge, $code, $scope),
+        'digest' => '',
         'attempts' => 0,
         'resend' => $now + MINUTE_IN_SECONDS,
     ];
-    $expires = $now + 5 * MINUTE_IN_SECONDS;
-    if (!mv_commerce_write($key, $previous, $expires, $data)) {
-        return new WP_Error('otp_limit');
+    if (!mv_commerce_write($key, $previous, $data['resend'], $data)) {
+        return new WP_Error('otp_unavailable');
+    }
+    $reservation = mv_commerce_read($key);
+    if (!$reservation || (json_decode($reservation['payload'], true)['id'] ?? '') !== $challenge) {
+        return new WP_Error('otp_unavailable');
     }
     $result = mv_commerce_sms($phone, "معلم ورزش | $label: $code\nاعتبار کد: ۵ دقیقه");
     if (is_wp_error($result)) {
-        $current = mv_commerce_read($key);
-        $current_data = $current ? json_decode($current['payload'], true) : [];
-        if (($current_data['id'] ?? '') === $challenge) {
-            $current_data['digest'] = '';
-            mv_commerce_write($key, $current, $expires, $current_data);
-        }
+        mv_commerce_write($key, $reservation, (int) ($previous['expires'] ?? $now), $previous_data);
+        return $result;
     }
-    return $result;
+    $accepted_at = time();
+    $data['digest'] = mv_commerce_otp_digest($phone, $challenge, $code, $scope);
+    $data['resend'] = $accepted_at + MINUTE_IN_SECONDS;
+    return mv_commerce_write($key, $reservation, $accepted_at + 5 * MINUTE_IN_SECONDS, $data)
+        ? true
+        : new WP_Error('otp_unavailable');
 }
 
 function mv_commerce_otp_verify(string $phone, string $code, string $scope = 'otp'): bool {
@@ -211,6 +217,7 @@ add_action('template_redirect', static function (): void {
         $timing = mv_commerce_account_otp_timing($phone);
         $now = time();
         if ($action === 'otp' && ($timing['expires'] ?? 0) > $now) {
+            WC()->session->__unset('mv_otp_retry_phone');
             wp_safe_redirect(mv_commerce_account_url('verify'), 303);
             exit;
         }
@@ -225,11 +232,19 @@ add_action('template_redirect', static function (): void {
         }
         $result = mv_commerce_otp_request($phone, $ip);
         if (is_wp_error($result)) {
-            mv_commerce_account_error($result->get_error_code() === 'otp_limit'
-                ? 'تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.'
-                : 'درخواست پیامک تأیید نشد. کمی بعد دوباره تلاش کنید.');
-            return;
+            mv_commerce_account_error(match ($result->get_error_code()) {
+                'otp_limit' => 'تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.',
+                'otp_cooldown' => 'برای درخواست دوبارهٔ کد، یک دقیقه صبر کنید.',
+                default => 'ارسال پیامک تأیید نشد. می‌توانید دوباره درخواست کد بدهید.',
+            });
+            if (!$resend) {
+                WC()->session->set('mv_otp_retry_phone', $phone);
+            }
+            WC()->session->set_customer_session_cookie(true);
+            wp_safe_redirect(mv_commerce_account_url($resend ? 'verify' : 'otp'), 303);
+            exit;
         }
+        WC()->session->__unset('mv_otp_retry_phone');
         WC()->session->set('mv_otp_phone', $phone);
         WC()->session->set_customer_session_cookie(true);
         wp_safe_redirect(mv_commerce_account_url('verify'), 303);

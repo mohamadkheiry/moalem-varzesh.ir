@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Moalem Commerce
  * Description: ورود با موبایل و ارسال پیامک‌های فروشگاه معلم ورزش
- * Version: 1.3.0
+ * Version: 1.3.1
  * Requires PHP: 8.1
  */
 defined('ABSPATH') || exit;

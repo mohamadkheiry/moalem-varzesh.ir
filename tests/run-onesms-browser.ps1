@@ -51,7 +51,7 @@ try {
     node (Join-Path $PSScriptRoot 'storefront.cjs')
     $code = $LASTEXITCODE
 } finally {
-    foreach ($path in @($fixture, $loader, $capture, $orderCapture)) {
+    foreach ($path in @($fixture, $loader, $capture, "$capture.failed", $orderCapture)) {
         if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path }
     }
     php $wpCli "--path=$wordpress" eval-file (Join-Path $PSScriptRoot 'cleanup-browser-commerce.php')

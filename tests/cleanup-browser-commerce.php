@@ -23,7 +23,7 @@ foreach (wc_get_orders(['billing_email' => $email, 'limit' => 10]) as $order) {
     wc_maybe_increase_stock_levels($order->get_id());
     $order->delete(true);
 }
-foreach (['otp', 'password-phone'] as $scope) {
+foreach (['otp', 'otp-send-phone', 'password-phone'] as $scope) {
     $wpdb->delete(mv_commerce_table(), ['state_key' => mv_commerce_key($scope, $phone)]);
 }
 foreach (['otp-send-ip', 'otp-verify-ip', 'password-ip'] as $scope) {

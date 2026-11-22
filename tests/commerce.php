@@ -47,13 +47,16 @@ $table = mv_commerce_table();
 $phone = '0900' . random_int(1000000, 9999999);
 $other = '0901' . substr($phone, 4);
 $ip = 'local-test-' . $phone;
+$limited_ip = $ip . '-limited';
 $order = null;
 $manager_orders = [];
 $otp_managers = [];
 $user_id = 0;
 $keys = [
     mv_commerce_key('otp', $phone), mv_commerce_key('otp', $other),
-    mv_commerce_key('otp-send-ip', $ip), mv_commerce_key('password-ip', $ip),
+    mv_commerce_key('otp-send-ip', $ip), mv_commerce_key('otp-send-ip', $limited_ip),
+    mv_commerce_key('otp-send-phone', $phone), mv_commerce_key('otp-send-phone', $other),
+    mv_commerce_key('password-ip', $ip),
     mv_commerce_key('password-phone', $phone), mv_commerce_key('basic-test', $phone),
 ];
 $count = 0;
@@ -94,17 +97,26 @@ try {
     $check(mv_commerce_otp_request($phone, $ip)->get_error_code() === 'sms_transport', 'failed transport leaves no usable OTP');
     $check(!mv_commerce_otp_verify($phone, $sent_code()), 'failed delivery code cannot authorize a session');
     $otp_key = mv_commerce_key('otp', $phone);
-    $clear($otp_key);
 
     $provider = 'accept';
-    $check(mv_commerce_otp_request($phone, $ip) === true, 'issue OTP');
+    $check(mv_commerce_otp_request($phone, $ip) === true, 'a successful OTP request can immediately follow failed delivery');
     $code = $sent_code();
     $wrong = $code === '111111' ? '111112' : '111111';
     $stored = mv_commerce_read($otp_key);
     $data = json_decode($stored['payload'], true);
     $check($code !== '' && $data['digest'] === mv_commerce_otp_digest($phone, $data['id'], $code)
         && !isset($data['code']), 'challenge stores a digest');
-    $check(mv_commerce_otp_request($phone, $ip)->get_error_code() === 'otp_limit', 'resend cooldown');
+    $before = count($requests);
+    $check(mv_commerce_otp_request($phone, $ip)->get_error_code() === 'otp_cooldown' && count($requests) === $before,
+        'successful send applies a cooldown without a second provider call');
+    $data['resend'] = time() - 1;
+    $check(mv_commerce_write($otp_key, $stored, (int) $stored['expires'], $data), 'advance past the resend cooldown');
+    $provider = 'reject';
+    $check(mv_commerce_otp_request($phone, $ip)->get_error_code() === 'sms_rejected', 'provider rejection during resend');
+    $restored = mv_commerce_read($otp_key);
+    $check($restored['expires'] === $stored['expires'] && json_decode($restored['payload'], true) === $data,
+        'failed resend preserves the previous valid code and leaves resend available');
+    $provider = 'accept';
     $check(!mv_commerce_otp_verify($other, $code), 'code bound to its phone');
     $check(!mv_commerce_otp_verify($phone, $wrong), 'wrong OTP');
     $check(mv_commerce_otp_verify($phone, $code), 'correct OTP after an incorrect attempt');
@@ -123,6 +135,13 @@ try {
         $check(!mv_commerce_otp_verify($phone, $wrong), 'reject incorrect verification attempt ' . $attempt);
     }
     $check(!mv_commerce_otp_verify($phone, $code), 'lock challenge after five attempts');
+    $before = count($requests);
+    $check(mv_commerce_write(mv_commerce_key('otp-send-ip', $limited_ip), null, time() + 900, ['count' => 8])
+        && mv_commerce_otp_request($other, $limited_ip)->get_error_code() === 'otp_limit'
+        && count($requests) === $before, 'a genuine exhausted request quota still blocks the provider call');
+    $check(mv_commerce_write(mv_commerce_key('otp-send-phone', $other), null, time() + 900, ['count' => 8])
+        && mv_commerce_otp_request($other, $ip)->get_error_code() === 'otp_limit'
+        && count($requests) === $before, 'changing IP does not bypass the phone quota');
 
     $basic_key = mv_commerce_key('basic-test', $phone);
     $check(mv_commerce_limit($basic_key, 2, 120) && mv_commerce_limit($basic_key, 2, 120)
@@ -243,6 +262,7 @@ try {
     $session = wp_generate_password(32, false, false);
     $enrollment = mv_commerce_manager_enrollment_scope($shop_manager, $session);
     $keys[] = mv_commerce_key($enrollment, $other);
+    $keys[] = mv_commerce_key($enrollment . '-send-phone', $other);
     $check(mv_commerce_otp_request($other, $manager_ip, $enrollment, 'کد تأیید شمارهٔ ورود مدیر') === true,
         'send a purpose-specific manager enrollment OTP');
     $enrollment_code = $sent_code();
@@ -267,7 +287,9 @@ try {
 
     foreach ([$other => $shop_manager, $phone => $admin] as $mobile => $actor) {
         $identity = mv_commerce_manager_for_phone($mobile);
-        $keys[] = mv_commerce_key(mv_commerce_manager_login_scope($identity), $mobile);
+        $scope = mv_commerce_manager_login_scope($identity);
+        $keys[] = mv_commerce_key($scope, $mobile);
+        $keys[] = mv_commerce_key($scope . '-send-phone', $mobile);
         $before = count($requests);
         mv_commerce_request_manager_otp($mobile, $manager_ip);
         $login_code = $sent_code();

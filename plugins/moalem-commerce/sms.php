@@ -18,12 +18,23 @@ function mv_commerce_phone(string $input): string {
     return preg_match('/^09[0-9]{9}$/D', $digits) ? $digits : '';
 }
 
+function mv_commerce_sms_failure(string $code, int $status = 0): WP_Error {
+    if (function_exists('wc_get_logger')) {
+        $message = 'OneSMS request failed: ' . $code;
+        if ($status) {
+            $message .= ' (HTTP ' . $status . ')';
+        }
+        wc_get_logger()->warning($message, ['source' => 'moalem-sms']);
+    }
+    return new WP_Error($code);
+}
+
 function mv_commerce_sms(string $phone, string $body) {
     $key = defined('MV_ONESMS_KEY') ? MV_ONESMS_KEY : getenv('MV_ONESMS_KEY');
     $sender = defined('MV_ONESMS_FROM') ? MV_ONESMS_FROM : getenv('MV_ONESMS_FROM');
     $phone = mv_commerce_phone($phone);
     if (!$key || !$sender || !$phone) {
-        return new WP_Error('sms_unavailable');
+        return mv_commerce_sms_failure('sms_unavailable');
     }
     $response = wp_safe_remote_post(MV_ONESMS_URL, [
         'timeout' => 7,
@@ -35,12 +46,12 @@ function mv_commerce_sms(string $phone, string $body) {
         'body' => wp_json_encode(['from' => (string) $sender, 'to' => [$phone], 'body' => $body], JSON_UNESCAPED_UNICODE),
     ]);
     if (is_wp_error($response)) {
-        return new WP_Error('sms_transport');
+        return mv_commerce_sms_failure('sms_transport');
     }
     $status = (int) wp_remote_retrieve_response_code($response);
     $reply = json_decode(wp_remote_retrieve_body($response), true);
     if ($status < 200 || $status >= 300 || ($reply['success'] ?? null) === false || !empty($reply['error'])) {
-        return new WP_Error('sms_rejected');
+        return mv_commerce_sms_failure('sms_rejected', $status);
     }
     return true;
 }

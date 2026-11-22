@@ -317,11 +317,21 @@ const cases = [
         await go(page, '/my-account/');
         await page.screenshot({ path: resolve(evidence, 'storefront-account.png') });
     }],
-    ['14', 'بازگشت به کد پیامکی فعال، شمارش معکوس و ورود دوباره با رمز عبور', async page => {
+    ['14', 'تلاش دوباره بعد از خطای پیامک، بازیابی کد فعال و ورود با رمز عبور', async page => {
         await page.clock.install();
         const fixture = await loadSmsFixture(page, '/my-account/?mode=otp');
         await page.locator('#mv-phone').fill(fixture.phone);
-        await page.getByRole('button', { name: 'ارسال کد ورود' }).click();
+        const send = page.getByRole('button', { name: 'ارسال کد ورود' });
+        const [failed] = await Promise.all([
+            page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === '/my-account/'),
+            send.click(),
+        ]);
+        assert.equal(failed.status(), 303);
+        await page.getByText('ارسال پیامک تأیید نشد.', { exact: false }).waitFor();
+        assert.equal(await page.locator('#mv-phone').inputValue(), fixture.phone);
+        assert.equal(await page.locator('#mv-code').count(), 0);
+        assert.ok(!existsSync(fixture.capture));
+        await send.click();
         await page.waitForURL(/mode=verify/);
         assert.ok(existsSync(fixture.capture));
         const code = readFileSync(fixture.capture, 'utf8').trim();

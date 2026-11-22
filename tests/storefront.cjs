@@ -392,6 +392,38 @@ const cases = [
             }
         }
     }],
+    ['19', 'فهرست مقاله‌ها، موضوعات، نمایش خوانا و پیوند دوطرفه با کالا', async page => {
+        await go(page, '/blog/');
+        assert.equal(await page.locator('.guide-card').count(), 12);
+        assert.equal(await page.locator('.guide-topics a').count(), 11);
+        await page.locator('.guide-feature img').evaluate(img => img.decode());
+        await page.screenshot({ path: resolve(evidence, 'guides-desktop.png') });
+        const article = await page.locator('.guide-feature h2 a').getAttribute('href');
+        await go(page, '/blog/page/2/');
+        assert.ok((await page.locator('link[rel=canonical]').getAttribute('href')).endsWith('/blog/page/2/'));
+        assert.ok(!(await page.locator('.guide-card h2 a').evaluateAll(nodes => nodes.map(node => node.href))).includes(article));
+        await go(page, '/category/guide-futsal/');
+        assert.equal(await page.locator('.guide-card').count(), 10);
+        assert.equal(await page.locator('.guide-topics [aria-current=page]').innerText(), 'کفش فوتسال');
+        const path = new URL(await page.locator('.guide-card h2 a').first().getAttribute('href')).pathname;
+        for (const width of [360, 768, 1536]) {
+            await page.setViewportSize({ width, height: 920 });
+            await go(page, path);
+            assert.equal(await page.locator('h1').count(), 1);
+            assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            assert.ok(await page.locator('.guide-hero-image img').evaluate(async img => { await img.decode(); return img.naturalWidth && img.alt; }));
+            assert.ok((await page.locator('script[type="application/ld+json"]').allTextContents()).some(data => /"BlogPosting"/.test(data)));
+            assert.ok(await page.locator('.guide-product-links a').count() >= 2);
+            if (width === 360) await page.screenshot({ path: resolve(evidence, 'guide-mobile.png') });
+            const first = page.getByRole('navigation', { name: 'فهرست مقاله' }).locator('a').first();
+            await first.click();
+            assert.equal(new URL(page.url()).hash, '#step-1');
+        }
+        const product = await page.locator('.guide-product-links a').first().getAttribute('href');
+        await go(page, new URL(product, base).pathname);
+        assert.ok(await page.locator('.mv-related-guides a').count() >= 1);
+        assert.ok((await page.locator('meta[name=description]').getAttribute('content')).length > 25);
+    }],
 ];
 
 (async () => {

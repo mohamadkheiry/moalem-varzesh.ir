@@ -18,6 +18,9 @@ add_action('after_setup_theme', 'mv_theme_setup');
 
 add_action('wp_enqueue_scripts', static function (): void {
     wp_enqueue_style('moalem-varzesh', get_stylesheet_uri(), [], wp_get_theme()->get('Version'));
+    if (is_home() || is_category() || is_singular('post')) {
+        wp_enqueue_style('moalem-editorial', get_theme_file_uri('assets/editorial.css'), ['moalem-varzesh'], wp_get_theme()->get('Version'));
+    }
     wp_enqueue_script('moalem-social-links', get_theme_file_uri('assets/social-links.js'), [], wp_get_theme()->get('Version'), ['strategy' => 'defer', 'in_footer' => true]);
     if (is_front_page()) {
         wp_enqueue_script('moalem-hero-slider', get_theme_file_uri('assets/hero-slider.js'), [], wp_get_theme()->get('Version'), ['strategy' => 'defer', 'in_footer' => true]);
@@ -84,8 +87,15 @@ function mv_meta_description(): string {
         return 'فروشگاه معلم ورزش، خرید پوشاک ورزشی، کیت فوتبال، کفش ورزشی و لوازم تمرین.';
     }
     if (is_singular()) {
-        $description = get_post_meta(get_queried_object_id(), '_mv_source_description', true);
+        $id = get_queried_object_id();
+        $description = get_post_meta($id, '_mv_seo_description', true) ?: get_post_meta($id, '_mv_source_description', true);
         return $description ?: get_the_excerpt(get_queried_object_id());
+    }
+    if (is_home()) {
+        return 'راهنماهای فارسی معلم ورزش برای انتخاب کفش فوتسال و فوتبال، سایزبندی، چاپ لباس و مراقبت از تجهیزات تمرین.';
+    }
+    if (is_category()) {
+        return get_queried_object()->description ?: 'راهنماهای خرید و نگهداری تجهیزات ورزشی معلم ورزش.';
     }
     if (is_tax('product_cat')) {
         $term = get_queried_object();
@@ -99,8 +109,10 @@ function mv_meta_description(): string {
 
 function mv_archive_canonical(): string {
     $page = max(1, (int) get_query_var('paged'));
-    if (is_tax('product_cat')) {
+    if (is_tax('product_cat') || is_category()) {
         $url = get_term_link(get_queried_object());
+    } elseif (is_home() && get_option('page_for_posts')) {
+        $url = get_permalink((int) get_option('page_for_posts'));
     } elseif (function_exists('is_shop') && is_shop()) {
         $url = mv_shop_url();
     } else {
@@ -116,8 +128,22 @@ function mv_archive_canonical(): string {
     return trailingslashit($url) . user_trailingslashit($wp_rewrite->pagination_base . '/' . $page, 'paged');
 }
 
+function mv_external_seo(): bool {
+    return defined('WPSEO_VERSION') || defined('RANK_MATH_VERSION') || defined('AIOSEO_VERSION');
+}
+
+add_filter('document_title_parts', static function (array $parts): array {
+    if (is_singular(['product', 'post']) && !mv_external_seo()) {
+        $title = get_post_meta(get_queried_object_id(), '_mv_seo_title', true);
+        if ($title) {
+            $parts['title'] = $title;
+        }
+    }
+    return $parts;
+});
+
 add_action('wp_head', static function (): void {
-    if (defined('WPSEO_VERSION') || defined('RANK_MATH_VERSION') || defined('AIOSEO_VERSION')) {
+    if (mv_external_seo()) {
         return;
     }
     $description = wp_html_excerpt(trim(preg_replace('/\s+/u', ' ', wp_strip_all_tags(mv_meta_description()))), 160, '…');
@@ -133,8 +159,11 @@ add_action('wp_head', static function (): void {
     if (!is_singular() && $canonical) {
         printf("<link rel=\"canonical\" href=\"%s\">\n", esc_url($canonical));
     }
-    if (is_singular('product') && has_post_thumbnail()) {
-        printf("<meta property=\"og:image\" content=\"%s\">\n", esc_url(get_the_post_thumbnail_url(get_queried_object_id(), 'large')));
+    if (is_singular(['product', 'post'])) {
+        printf("<meta property=\"og:type\" content=\"%s\">\n", is_singular('post') ? 'article' : 'product');
+        if (has_post_thumbnail(get_queried_object_id())) {
+            printf("<meta property=\"og:image\" content=\"%s\">\n", esc_url(get_the_post_thumbnail_url(get_queried_object_id(), 'large')));
+        }
     }
 }, 5);
 
@@ -161,4 +190,5 @@ if (wp_get_environment_type() === 'local') {
 }
 
 require_once __DIR__ . '/print-options.php';
+require_once __DIR__ . '/editorial.php';
 require_once __DIR__ . '/mobile-store.php';

@@ -64,7 +64,22 @@ wp --path=$wpPath eval-file scripts/apply-cutouts.php runtime/cutouts verify
 
 ## سئو و نسخهٔ عمومی
 
-قالب عنوان و توضیح متا، نشانی اصلی صفحات، تصویر اشتراک‌گذاری، دادهٔ ساختاریافتهٔ ووکامرس، مسیر راهنما و پیوندهای ثابت سازگار با آدرس محصول مبدأ دارد. سایت محلی برای موتورهای جست‌وجو بسته است. در زمان انتقال به دامنهٔ عمومی، پس از بررسی آدرس‌ها، درگاه و تنظیمات ارسال، نمایه‌سازی را از تنظیمات خواندن وردپرس فعال کنید. تنظیمات پرداخت آزمایشی تنها در پایگاه دادهٔ نصب محلی ایجاد می‌شوند.
+قالب عنوان و توضیح متای یکتا، نشانی اصلی، تصویر اشتراک‌گذاری و دادهٔ ساختاریافتهٔ ووکامرس را ارائه می‌دهد. دادهٔ ساختاریافتهٔ قیمت از کد ارز ریال استفاده می‌کند و مبلغ فروشگاه با تومان نمایش داده می‌شود. اصلاح دسته‌ها و توضیحات با حفظ نشانی کالا، شناسهٔ انبار، قیمت و گزینه‌های خرید انجام می‌گیرد. سایت محلی برای موتورهای جست‌وجو بسته است. هنگام انتقال به دامنهٔ عمومی، پس از بررسی آدرس‌ها، درگاه و تنظیمات ارسال، نمایه‌سازی را از تنظیمات خواندن وردپرس فعال کنید. [راهنمای عنوان نتیجهٔ گوگل](https://developers.google.com/search/docs/appearance/title-link) · [راهنمای دادهٔ ساختاریافتهٔ محصول](https://developers.google.com/search/docs/appearance/structured-data/product)
+
+## مقاله‌ها و به‌روزرسانی سئو
+
+متن ۱۰۰ راهنمای تألیفی در پوشهٔ catalog/guides و معرفی موضوع‌ها در catalog/guide-topics.json است. هنگام وارد کردن، شناسه‌های محصولات مبدأ به محصولات همین وردپرس تبدیل می‌شوند. هر راهنما تصویر شاخص و پیوندهای مرتبط محلی دارد. هفت مقالهٔ قبلی نیز با حفظ نشانی و متن، از نظر رسانه و پیوند داخلی بازبینی می‌شوند.
+
+این فرمان‌ها را پس از وارد کردن کاتالوگ و کتابخانهٔ رسانه اجرا کنید.
+
+~~~powershell
+wp --path=$wpPath eval-file scripts/apply-catalog-seo.php
+python scripts/fetch-editorial-media.py runtime/editorial
+wp --path=$wpPath eval-file scripts/repair-source-editorial.php runtime/editorial
+wp --path=$wpPath eval-file scripts/import-guides.php
+wp --path=$wpPath eval-file tests/editorial-audit.php runtime/editorial-audit.json
+node tests/editorial-http.cjs runtime/editorial-audit.json
+~~~
 
 ## آزمون‌ها
 

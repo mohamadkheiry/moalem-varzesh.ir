@@ -6,6 +6,8 @@ $load = static fn(string $name): array => json_decode(file_get_contents("$catalo
 $products = $load('products');
 $variants = $load('variations');
 $categories = $load('categories');
+$term_plan = array_column($categories, null, 'id');
+require_once dirname(__DIR__) . '/scripts/catalog-category-plan.php';
 $media = $load('media');
 $errors = [];
 $check = static function (bool $ok, string $message) use (&$errors): void {
@@ -38,8 +40,11 @@ foreach ($products as $row) {
     $check(rawurldecode(wp_parse_url($item->get_permalink(), PHP_URL_PATH)) === rawurldecode(wp_parse_url($row['permalink'], PHP_URL_PATH)), 'Permalink ' . $row['id']);
     $check(count($item->get_gallery_image_ids()) + (int) (bool) $item->get_image_id() === count($row['images']), 'Gallery ' . $row['id']);
     $actual_terms = array_map('intval', $item->get_category_ids());
-    $expected_terms = $row['categories']
-        ? array_map(static fn(array $term): int => (int) get_term_by('slug', sanitize_title(rawurldecode($term['slug'])), 'product_cat')->term_id, $row['categories'])
+    $expected_slugs = get_option('mv_catalog_editorial_schema')
+        ? mv_catalog_category_plan($row, $term_plan)
+        : array_map(static fn(array $term): string => sanitize_title(rawurldecode($term['slug'])), $row['categories']);
+    $expected_terms = $expected_slugs
+        ? array_map(static fn(string $slug): int => (int) (get_term_by('slug', $slug, 'product_cat')->term_id ?? 0), $expected_slugs)
         : [(int) get_option('default_product_cat')];
     sort($actual_terms);
     sort($expected_terms);

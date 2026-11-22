@@ -39,6 +39,7 @@
         <div class="footer-end">تمام حقوق فروشگاه معلم ورزش محفوظ است.</div>
     </div>
 </footer>
+<?php get_template_part('template-parts/social-links'); ?>
 <?php wp_footer(); ?>
 </body>
 </html>

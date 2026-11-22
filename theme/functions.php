@@ -18,6 +18,7 @@ add_action('after_setup_theme', 'mv_theme_setup');
 
 add_action('wp_enqueue_scripts', static function (): void {
     wp_enqueue_style('moalem-varzesh', get_stylesheet_uri(), [], wp_get_theme()->get('Version'));
+    wp_enqueue_script('moalem-social-links', get_theme_file_uri('assets/social-links.js'), [], wp_get_theme()->get('Version'), ['strategy' => 'defer', 'in_footer' => true]);
     if (is_front_page()) {
         wp_enqueue_script('moalem-hero-slider', get_theme_file_uri('assets/hero-slider.js'), [], wp_get_theme()->get('Version'), ['strategy' => 'defer', 'in_footer' => true]);
     }
@@ -30,6 +31,12 @@ function mv_icon(string $name): void {
         'user' => '<circle cx="12" cy="8" r="3.2"/><path d="M5 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2z"/>',
         'cart' => '<path d="M2.5 4h2.7l2.5 11.2h10.6L21 7.5H6"/><circle cx="9" cy="20" r="1.25"/><circle cx="17" cy="20" r="1.25"/>',
         'brand' => '<path d="M4 17c4.5-7.4 9-10.3 15-10.7M7 20l6.3-5.8h5l-3 4.2M4 10l4.7-3.2 5 .8"/><circle cx="17" cy="3.7" r="1.5" fill="currentColor" stroke="none"/>',
+        'social' => '<circle cx="5" cy="12" r="2.6"/><circle cx="18" cy="5" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="m7.3 10.8 8.4-4.6M7.3 13.2l8.4 4.6"/>',
+        'close' => '<path d="m6 6 12 12M18 6 6 18"/>',
+        'instagram' => '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1.05" fill="currentColor" stroke="none"/>',
+        'telegram' => '<path d="M21 4 3 11.2l5.2 2 2.4 6.2 3-3.3 4.3 3.1L21 4ZM8.2 13.2 17 7.5"/>',
+        'whatsapp' => '<path d="M20.5 11.9a8.5 8.5 0 0 1-12.2 7.6l-4.6 1 1-4.3a8.5 8.5 0 1 1 15.8-4.3Z"/><path d="M9 8.5c.3 3 2.6 5.5 5.6 6l1.1-1.3-1.8-1.1-.9.5a6 6 0 0 1-2.3-2.5l.5-.7-1-1.8Z"/>',
+        'chat' => '<path d="M20.6 11.8a8.6 8.6 0 0 1-8.6 8.6 9 9 0 0 1-3.8-.9l-4.6 1 .9-4.4a8.6 8.6 0 1 1 16.1-4.3Z"/><path d="M8.8 11.8h6.4"/>',
     ];
     if (isset($icons[$name])) {
         echo '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $icons[$name] . '</svg>';

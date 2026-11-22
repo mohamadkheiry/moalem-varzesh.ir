@@ -1,7 +1,7 @@
 /*
 Theme Name: Moalem Varzesh
 Description: قالب فارسی سبک فروشگاه معلم ورزش برای ووکامرس
-Version: 1.2.0
+Version: 1.3.0
 Requires at least: 7.0
 Requires PHP: 8.1
 Text Domain: moalem-varzesh
@@ -978,3 +978,74 @@ button, input, select, textarea { font: inherit; }
 .woocommerce .mv-account button.button { width: 100%; min-height: 3rem; background: var(--lime); }
 .woocommerce .mv-account button.button:hover { background: var(--lime-hover); }
 .mv-account-alt { display: inline-flex; min-height: 2.75rem; align-items: center; margin-inline-end: .75rem; color: var(--green); }
+
+.mv-social {
+    position: fixed;
+    z-index: 12;
+    inset-inline-end: max(.85rem, env(safe-area-inset-left, 0px));
+    inset-block-end: max(.85rem, env(safe-area-inset-bottom, 0px));
+}
+.mv-social-toggle {
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    margin-inline-start: auto;
+    border: 1px solid #ffffff26;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--lime);
+    box-shadow: 0 .32rem 1.25rem #14261e3d;
+    list-style: none;
+    cursor: pointer;
+}
+.mv-social-toggle:hover { background: #253a30; }
+.mv-social-toggle::-webkit-details-marker { display: none; }
+.mv-social-toggle > span:not(.screen-reader-text) { line-height: 0; }
+.mv-social-toggle svg { width: 1.4rem; height: 1.4rem; }
+.mv-social .mv-social-close, .mv-social[open] .mv-social-open { display: none; }
+.mv-social[open] .mv-social-close { display: block; }
+.mv-social-panel {
+    position: absolute;
+    inset-inline-end: 0;
+    inset-block-end: calc(100% + .6rem);
+    width: min(12.75rem, calc(100vw - 1.7rem));
+    max-height: calc(100dvh - 6rem);
+    overflow: auto;
+    padding: .36rem;
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    background: var(--white);
+    box-shadow: 0 .55rem 1.8rem #14261e29;
+}
+.mv-social-panel ul { display: grid; gap: .2rem; margin: 0; padding: 0; list-style: none; }
+.mv-social-panel a {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: .65rem;
+    min-height: 3rem;
+    padding: .26rem .48rem;
+    border-radius: .62rem;
+    font-weight: 720;
+    text-decoration: none;
+}
+.mv-social-panel a:hover { background: var(--soft); }
+.mv-social-panel a:focus-visible { outline-offset: -2px; }
+.mv-social-panel a > svg { width: 1rem; height: 1rem; color: var(--muted); }
+.mv-social-icon {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: .58rem;
+}
+.mv-social-icon svg { width: 1.15rem; height: 1.15rem; }
+.mv-social-instagram { background: #f8e9f3; color: #893064; }
+.mv-social-telegram { background: #e6f2fc; color: #175b93; }
+.mv-social-whatsapp { background: #e2f4e9; color: #196141; }
+.mv-social-chat { background: #fff1df; color: #874613; }
+
+@media (min-width: 768px) {
+    .mv-social { inset-inline-end: 1.25rem; inset-block-end: 1.25rem; }
+}

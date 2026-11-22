@@ -346,6 +346,42 @@ const cases = [
         await input.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
         await page.locator('.hero-slide-boots.is-active').waitFor();
     }],
+    ['18', 'دکمهٔ شناور شبکه‌های اجتماعی، پیوندها و کنترل صفحه‌کلید', async page => {
+        const expected = [
+            'https://www.instagram.com/moalemvarzesh_store/',
+            'https://t.me/MoalemVarzesh_Store',
+            'https://wa.me/message/EMDTPXP6JVVMC1',
+            'https://eitaa.com/MoalemVarzesh_Store',
+        ];
+        for (const [width, path] of [[1536, '/'], [320, '/my-account/']]) {
+            await page.setViewportSize({ width, height: 780 });
+            await go(page, path);
+            const social = page.locator('.mv-social');
+            const toggle = social.locator('summary');
+            const panel = social.getByRole('navigation', { name: 'شبکه‌های اجتماعی فروشگاه', includeHidden: true });
+            assert.equal(await panel.isVisible(), false);
+            const before = await toggle.boundingBox();
+            assert.ok(before.width >= 44 && before.height >= 44 && before.x < 24);
+            await page.evaluate(() => window.scrollTo(0, 180));
+            assert.deepEqual(await toggle.boundingBox(), before);
+            await toggle.press('Enter');
+            assert.ok(await panel.isVisible());
+            const region = await panel.boundingBox();
+            assert.ok(region.x >= 0 && region.x + region.width <= width && region.y >= 0);
+            const links = await panel.getByRole('link').evaluateAll(items => items.map(link => [link.href, link.target, link.rel]));
+            assert.deepEqual(links, expected.map(href => [href, '_blank', 'noopener noreferrer']));
+            await panel.getByRole('link').first().press('Escape');
+            assert.equal(await panel.isVisible(), false);
+            assert.ok(await toggle.evaluate(el => document.activeElement === el));
+            await toggle.click();
+            await page.getByRole('heading', { level: 1 }).click();
+            assert.equal(await panel.isVisible(), false);
+            if (width === 320) {
+                await toggle.click();
+                await page.screenshot({ path: resolve(evidence, 'storefront-social.png') });
+            }
+        }
+    }],
 ];
 
 (async () => {

@@ -1,0 +1,13 @@
+@font-face { font-family: Vazirmatn; src: url("vazirmatn.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+.mv-support-admin { max-width: 78rem; font-family: Vazirmatn, Tahoma, sans-serif; }
+.mv-support-admin-panel { padding: 1rem; border: 1px solid #dcdcde; border-radius: .55rem; background: #fff; }
+.mv-support-admin-panel h2, .mv-support-admin-panel h3 { margin: 0 0 .75rem; }
+.mv-support-admin-menus, .mv-support-admin-footer, .mv-support-admin-grid { display: grid; gap: .9rem; }
+.mv-support-admin-footer, .mv-support-admin-menus { grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); }
+.mv-support-admin-menus { margin-block-start: 1rem; padding-block-start: 1rem; border-block-start: 1px solid #dcdcde; }
+.mv-support-admin-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); }
+.mv-support-admin label { display: grid; gap: .3rem; margin-block-end: .65rem; font-weight: 650; }
+.mv-support-admin input[type="text"], .mv-support-admin textarea { width: 100%; font-weight: 400; }
+.mv-support-admin input[type="color"] { width: 4rem; min-height: 2rem; }
+.mv-support-admin-card img { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; object-fit: cover; border-radius: .35rem; }
+.mv-support-admin-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .65rem; margin-block: .7rem; }

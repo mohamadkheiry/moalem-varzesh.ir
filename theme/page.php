@@ -1,4 +1,12 @@
 <?php
+$support_page = mv_support_page_key(get_queried_object_id());
+if ($support_page) {
+    get_header();
+    get_template_part('template-parts/support-page', null, ['key' => $support_page]);
+    get_footer();
+    return;
+}
+
 if (!function_exists('is_cart') || !(is_cart() || is_checkout() || is_account_page())) {
     require __DIR__ . '/index.php';
     return;

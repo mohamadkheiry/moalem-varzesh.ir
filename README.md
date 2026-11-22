@@ -18,6 +18,7 @@ wp --path=$wpPath plugin activate moalem-commerce
 wp --path=$wpPath theme activate moalem-varzesh
 wp --path=$wpPath eval-file scripts/setup.php
 wp --path=$wpPath eval-file scripts/import-editorial.php
+wp --path=$wpPath eval-file scripts/setup-footer.php
 wp --path=$wpPath rewrite flush
 $env:MV_MEDIA_CACHE = (Resolve-Path runtime/media).Path
 wp --path=$wpPath eval-file scripts/import-catalog.php
@@ -25,6 +26,8 @@ wp --path=$wpPath eval-file scripts/local-checkout.php
 ~~~
 
 در XAMPP می‌توان PHP و MariaDB اختصاصی برنامه را پس از نصب با scripts/start-local.ps1 -Runtime C:\path\to\runtime راه انداخت. پوشهٔ Runtime باید حاوی wordpress و mariadb پیکربندی‌شده باشد. آدرس پیش‌فرض http://127.0.0.1:8087/ است.
+
+برای مدیریت فوتر و صفحه‌های راهنما، در پیشخوان به «نمایش ← فوتر و صفحه‌های راهنما» بروید. عنوان‌ گروه‌ها، متن معرفی، رنگ و تصویر را آنجا تغییر دهید. لینک‌های ویرایش، منوهای بومی وردپرس را برای تغییر عنوان و ترتیب پیوندها و ویرایشگر برگه‌ها را برای تغییر متن باز می‌کنند.
 
 ## ساخت تصاویر شفاف کالاها
 

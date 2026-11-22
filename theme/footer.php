@@ -1,42 +1,43 @@
-<footer class="site-footer">
+<?php $footer = mv_support_settings(); $defaults = mv_footer_default_items(); $assigned = get_nav_menu_locations(); ?>
+<footer class="site-footer" style="--mv-footer-accent:<?php echo esc_attr(sanitize_hex_color($footer['footer_accent'])); ?>">
     <div class="wrap">
         <div class="footer-grid">
-            <div>
+            <div class="mv-footer-brand">
                 <a class="brand" href="<?php echo esc_url(home_url('/')); ?>"><?php mv_icon('brand'); ?><span><?php bloginfo('name'); ?></span></a>
-                <p>فروشگاه پوشاک، کفش و تجهیزات ورزشی</p>
+                <?php if ($footer['footer_intro'] !== '') : ?><p><?php echo esc_html($footer['footer_intro']); ?></p><?php endif; ?>
             </div>
-            <div>
-                <h2>راهنمای خرید</h2>
-                <nav aria-label="راهنمای خرید">
-                    <?php
-                    $links = [
-                        'about-us' => 'درباره ما',
-                        'contact-us' => 'تماس با ما',
-                        'terms-and-conditions' => 'قوانین و مقررات',
-                        'refund_returns-2' => 'مرجوعی و بازپرداخت',
-                        'blog' => 'راهنمای خرید',
-                    ];
-                    foreach ($links as $slug => $label) {
-                        $page = get_page_by_path($slug);
-                        if ($page) {
-                            printf('<a href="%s">%s</a>', esc_url(get_permalink($page)), esc_html($label));
-                        }
-                    }
-                    echo get_the_privacy_policy_link();
-                    ?>
-                </nav>
-            </div>
+            <?php foreach (mv_footer_locations() as $location => $label) :
+                $menu = wp_nav_menu([
+                    'theme_location' => $location, 'echo' => false, 'container' => false,
+                    'menu_class' => 'mv-footer-links', 'fallback_cb' => false,
+                ]);
+                if (!$menu && (!empty($assigned[$location]) || empty($defaults[$location]))) continue;
+                $heading = $footer['headings'][$location];
+                ?>
+                <div class="mv-footer-group">
+                    <h2><?php echo esc_html($heading); ?></h2>
+                    <nav aria-label="<?php echo esc_attr($heading); ?>">
+                        <?php if ($menu) : echo $menu; else : ?>
+                            <ul class="mv-footer-links">
+                                <?php foreach ($defaults[$location] as [$id, $label]) : ?>
+                                    <li><a href="<?php echo esc_url(get_permalink($id)); ?>"><?php echo esc_html($label); ?></a></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                    </nav>
+                </div>
+            <?php endforeach; ?>
             <?php if (get_option('mv_enamad_enabled')) : ?>
-            <div>
+            <div class="mv-footer-seal">
                 <h2>نماد اعتماد الکترونیکی</h2>
                 <a class="trust" href="https://trustseal.enamad.ir/?id=647991&amp;Code=pvY06MWdhx4lH2PAHUq3b5UJ1rqBjv2h" target="_blank" rel="noopener" referrerpolicy="origin" aria-label="استعلام اینماد دامنه moalem-varzesh.ir">
-                    <img src="<?php echo esc_url(get_theme_file_uri('assets/enamad.png')); ?>" alt="اینماد معلم ورزش" width="72" height="72">
+                    <img src="<?php echo esc_url(get_theme_file_uri('assets/enamad.png')); ?>" alt="اینماد معلم ورزش" width="72" height="72" loading="lazy">
                 </a>
-                <?php if (wp_get_environment_type() === 'local') : ?><p>اینماد دامنهٔ moalem-varzesh.ir</p><?php endif; ?>
+                <?php if (wp_get_environment_type() === 'local') : ?><p>اینماد دامنهٔ <bdi dir="ltr">moalem-varzesh.ir</bdi></p><?php endif; ?>
             </div>
             <?php endif; ?>
         </div>
-        <div class="footer-end">تمام حقوق فروشگاه معلم ورزش محفوظ است.</div>
+        <?php if ($footer['footer_credit'] !== '') : ?><div class="footer-end"><?php echo esc_html($footer['footer_credit']); ?></div><?php endif; ?>
     </div>
 </footer>
 <?php get_template_part('template-parts/social-links'); ?>

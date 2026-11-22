@@ -645,6 +645,107 @@ const cases = [
         assert.equal(await page.locator('h1').innerText(), 'توپ‌های ورزشی');
         assert.equal(await page.locator('ul.products li.product').count(), 3);
     }],
+    ['22', 'فوتر، مقصد پیوندها، تصاویر و فهرست صفحات راهنما', async page => {
+        const paths = ['/about-us/', '/contact-us/', '/terms-and-conditions/', '/refund_returns-2/',
+            '/' + encodeURIComponent('حریم-خصوصی-معلم-ورزش') + '/',
+            '/' + encodeURIComponent('سیاست-کوکی') + '/', '/blog/'];
+        await go(page, '/');
+        const menus = page.locator('.site-footer .mv-footer-group');
+        assert.equal(await menus.count(), 3);
+        const destinations = await menus.locator('a').evaluateAll(anchors => anchors.map(a => a.href));
+        assert.equal(destinations.length, 10);
+        assert.equal(new Set(destinations).size, 10);
+        for (const href of [...paths, '/shop/', '/my-account/', '/cart/']) {
+            assert.ok(destinations.some(url => decodePath(new URL(url).pathname) === decodePath(href)), href);
+            const response = await page.request.get(base + href, { maxRedirects: 0 });
+            assert.equal(response.status(), 200, href);
+        }
+        await page.locator('.site-footer').screenshot({ path: resolve(evidence, 'support-footer-desktop.png') });
+        const covers = new Set();
+        for (const [index, path] of paths.entries()) {
+            const mobile = index % 2 === 1;
+            await page.setViewportSize({ width: mobile ? 390 : 1536, height: 950 });
+            await go(page, path);
+            assert.equal(await page.locator('main h1').count(), 1);
+            assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            const photo = page.locator('.mv-support-hero img');
+            const image = await photo.evaluate(async img => { await img.decode(); return img.currentSrc; });
+            assert.ok(image.endsWith(mobile ? '-640.webp' : '-1200.webp'), path);
+            covers.add(image.replace(/-(?:640|1200)\.webp$/, ''));
+            const body = page.locator('.mv-support-body');
+            const outline = page.locator('.mv-support-outline a');
+            if (await body.count()) {
+                assert.ok(!(await body.locator('a[href]').evaluateAll(anchors => anchors.map(a => a.hostname))).includes('moalem-varzesh.ir'));
+            }
+            if (await outline.count()) {
+                const first = outline.first();
+                await first.click();
+                const hash = new URL(page.url()).hash;
+                assert.equal(hash, await first.getAttribute('href'));
+                assert.ok(await page.evaluate(id => !!document.getElementById(id), decodeURIComponent(hash.slice(1))));
+            }
+            if (['/about-us/', '/contact-us/', '/refund_returns-2/', '/blog/'].includes(path)) {
+                const name = path.replace(/\//g, '');
+                await page.locator('.mv-support-hero').screenshot({ path: resolve(evidence, 'support-' + name + '.png') });
+            }
+        }
+        assert.equal(covers.size, 7);
+        await page.setViewportSize({ width: 390, height: 950 });
+        await page.locator('.site-footer').screenshot({ path: resolve(evidence, 'support-footer-mobile.png') });
+    }],
+    ['23', 'مدیریت متن و تصویر صفحه، رنگ فوتر و منوی وردپرس', async page => {
+        const fixture = JSON.parse(readFileSync(process.env.MV_SUPPORT_ADMIN_FIXTURE, 'utf8'));
+        await page.goto(base + '/wp-login.php', { waitUntil: 'domcontentloaded' });
+        await page.locator('#user_login').fill(fixture.user);
+        await page.locator('#user_pass').fill(fixture.password);
+        await page.locator('#wp-submit').click();
+        await page.waitForURL(/\/wp-admin\//);
+        const settingsPath = '/wp-admin/themes.php?page=mv-support-design';
+        await page.goto(base + settingsPath, { waitUntil: 'domcontentloaded' });
+        const admin = page.locator('.mv-support-admin');
+        assert.equal(await admin.locator('[data-support-image]').count(), 7);
+        assert.equal(await admin.locator('.mv-support-admin-menus a').count(), 3);
+        await page.screenshot({ path: resolve(evidence, 'support-settings-desktop.png') });
+        await admin.locator('input[name="mv_support_design[footer_intro]"]').fill('معرفی موقت برای آزمون فوتر');
+        await admin.locator('input[name="mv_support_design[footer_accent]"]').fill('#594963');
+        const prefix = 'mv_support_design[pages][about]';
+        const intro = admin.locator('textarea[name="' + prefix + '[intro]"]');
+        const cover = admin.locator('input[name="' + prefix + '[image]"]');
+        const card = admin.locator('[data-support-image]').filter({ has: page.locator('textarea[name="' + prefix + '[intro]"]') });
+        await intro.fill('معرفی موقت برای آزمون صفحه');
+        await card.locator('input[type="color"]').fill('#6a4141');
+        await card.locator('[data-pick-image]').click();
+        const modal = page.locator('.media-modal');
+        const image = modal.locator('.attachments-browser .attachment').first();
+        await image.click();
+        const attachment = await image.getAttribute('data-id');
+        await modal.locator('.media-button-select').click();
+        assert.equal(await cover.inputValue(), attachment);
+        await admin.locator('input[type="submit"]').click();
+        await page.waitForURL(/settings-updated=true/);
+        await go(page, '/about-us/');
+        assert.match(await page.locator('.site-footer').getAttribute('style'), /#594963/);
+        assert.match(await page.locator('.mv-support-hero').getAttribute('style'), /#6a4141/);
+        assert.equal(await page.locator('.mv-support-hero p').innerText(), 'معرفی موقت برای آزمون صفحه');
+        assert.equal(await page.locator('.mv-footer-brand p').innerText(), 'معرفی موقت برای آزمون فوتر');
+        assert.ok((await page.locator('.mv-support-hero img').getAttribute('src')).includes('/uploads/'));
+        await page.goto(base + settingsPath, { waitUntil: 'domcontentloaded' });
+        assert.equal(await cover.inputValue(), attachment);
+        await card.locator('[data-reset-image]').click();
+        assert.equal(await cover.inputValue(), '0');
+        await admin.locator('input[type="submit"]').click();
+        await page.waitForURL(/settings-updated=true/);
+        await page.goto(base + settingsPath, { waitUntil: 'domcontentloaded' });
+        await admin.locator('.mv-support-admin-menus a').first().click();
+        await page.waitForURL(/nav-menus.php\?menu=/);
+        const menuItem = page.locator('#menu-item-' + fixture.item);
+        await menuItem.locator('.item-edit').click();
+        await menuItem.locator('.edit-menu-item-title').fill('پیوند موقت آزمون فوتر');
+        await page.locator('#save_menu_footer').click();
+        await go(page, '/about-us/');
+        assert.ok(await page.locator('.site-footer').getByRole('link', { name: 'پیوند موقت آزمون فوتر' }).isVisible());
+        assert.match(await page.locator('.mv-support-hero img').getAttribute('src'), /\/assets\/support\/about-1200.webp$/);
+    }],
 ];
 
 (async () => {
@@ -658,6 +759,7 @@ const cases = [
         for (const [number, name, test] of cases) {
             if (selected && !selected.includes(number)) continue;
             if (['14', '16'].includes(number) && !process.env.MV_QA_SMS_FIXTURE) continue;
+            if (number === '23' && !process.env.MV_SUPPORT_ADMIN_FIXTURE) continue;
             const context = await browser.newContext({ viewport: { width: 1536, height: 1024 }, locale: 'fa-IR' });
             const page = await context.newPage();
             const errors = [];

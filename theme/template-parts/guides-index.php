@@ -4,10 +4,17 @@ $topic = is_category() ? get_queried_object() : null;
 $categories = get_categories(['hide_empty' => true]);
 ?>
 <main id="main" class="wrap editorial-index">
-    <header class="editorial-banner">
-        <h1><?php echo esc_html($topic ? $topic->name : 'راهنمای خرید و مطالب ورزشی'); ?></h1>
-        <p><?php echo esc_html($topic && $topic->description ? $topic->description : 'برای خرید بهتر، راهنمای انتخاب و نگهداری کفش، لباس و لوازم ورزش را بخوانید.'); ?></p>
-    </header>
+    <?php if ($topic) : ?>
+        <header class="editorial-banner">
+            <h1><?php echo esc_html($topic->name); ?></h1>
+            <?php if ($topic->description) : ?><p><?php echo esc_html($topic->description); ?></p><?php endif; ?>
+        </header>
+    <?php else : ?>
+        <?php $guides_id = mv_support_page_id('guides'); ?>
+        <?php get_template_part('template-parts/support-hero', null, [
+            'key' => 'guides', 'id' => $guides_id, 'title' => $guides_id ? get_the_title($guides_id) : 'راهنمای خرید و مقالات ورزشی',
+        ]); ?>
+    <?php endif; ?>
     <nav class="guide-topics" aria-label="موضوعات مقاله‌ها">
         <a href="<?php echo esc_url(mv_guides_url()); ?>" <?php if (!$topic) echo 'aria-current="page"'; ?>>همهٔ مقاله‌ها</a>
         <?php foreach ($categories as $category) :

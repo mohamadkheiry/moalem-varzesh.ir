@@ -4,6 +4,7 @@ defined('ABSPATH') || exit;
 function mv_theme_setup(): void {
     add_theme_support('title-tag');
     add_theme_support('post-thumbnails');
+    register_nav_menus(mv_footer_locations());
     add_theme_support('html5', ['search-form', 'comment-form', 'comment-list', 'gallery', 'caption', 'style', 'script']);
     add_theme_support('woocommerce', [
         'thumbnail_image_width' => 440,
@@ -18,6 +19,7 @@ add_action('after_setup_theme', 'mv_theme_setup');
 
 add_action('wp_enqueue_scripts', static function (): void {
     wp_enqueue_style('moalem-varzesh', get_stylesheet_uri(), [], wp_get_theme()->get('Version'));
+    wp_enqueue_style('moalem-support', get_theme_file_uri('assets/support.css'), ['moalem-varzesh'], wp_get_theme()->get('Version'));
     if (is_home() || is_category() || is_singular('post')) {
         wp_enqueue_style('moalem-editorial', get_theme_file_uri('assets/editorial.css'), ['moalem-varzesh'], wp_get_theme()->get('Version'));
     }
@@ -208,4 +210,5 @@ if (wp_get_environment_type() === 'local') {
 require_once __DIR__ . '/print-options.php';
 require_once __DIR__ . '/editorial.php';
 require_once __DIR__ . '/storefront.php';
+require_once __DIR__ . '/support.php';
 require_once __DIR__ . '/mobile-store.php';

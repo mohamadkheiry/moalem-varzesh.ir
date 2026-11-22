@@ -17,7 +17,7 @@ foreach (wc_get_orders(['billing_email' => $email, 'limit' => 10]) as $order) {
     if ($order->get_billing_phone() !== $phone) {
         continue;
     }
-    foreach (['received', 'completed', 'cancelled'] as $event) {
+    foreach (['received', 'completed', 'cancelled', 'manager-received'] as $event) {
         $wpdb->delete(mv_commerce_table(), ['state_key' => hash('sha256', 'order-sms|' . $order->get_id() . '|' . $event)]);
     }
     wc_maybe_increase_stock_levels($order->get_id());

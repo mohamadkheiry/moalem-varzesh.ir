@@ -39,6 +39,7 @@ add_filter('pre_http_request', static function ($pre, array $config, string $url
 }, 10, 3);
 if (($_SERVER['HTTP_X_MV_QA_MODE'] ?? '') === $fixture['tag']) {
     header('X-MV-QA-Mode: mocked');
+    add_filter('pre_option_mv_commerce_manager_phone', '__return_empty_string');
     // A separate limit scope for the fixture avoids changing localhost login counters.
     $_SERVER['REMOTE_ADDR'] = '127.0.0.2';
     add_action('user_register', static function (int $id) use ($fixture): void {

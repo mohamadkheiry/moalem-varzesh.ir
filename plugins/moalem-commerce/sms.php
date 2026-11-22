@@ -47,7 +47,7 @@ function mv_commerce_sms(string $phone, string $body) {
 
 add_action('woocommerce_order_status_changed', 'mv_commerce_order_sms', 20, 4);
 
-function mv_commerce_order_sms(int $order_id, string $from, string $to, WC_Order $order): void {
+function mv_commerce_order_sms(int $_order_id, string $from, string $to, WC_Order $order): void {
     $messages = [
         'processing' => ['received', 'سفارش %s ثبت شد و در حال آماده‌سازی است.'],
         'on-hold' => ['received', 'سفارش %s ثبت شد و در انتظار تأیید است.'],
@@ -55,11 +55,19 @@ function mv_commerce_order_sms(int $order_id, string $from, string $to, WC_Order
         'cancelled' => ['cancelled', 'سفارش %s لغو شد.'],
     ];
     $phone = mv_commerce_phone($order->get_billing_phone());
-    if (!$phone || !isset($messages[$to])) {
-        return;
+    if ($phone && isset($messages[$to])) {
+        [$event, $message] = $messages[$to];
+        mv_commerce_order_notice($order, $event, $phone, $message, 'مشتری');
     }
-    [$event, $message] = $messages[$to];
-    $key = hash('sha256', 'order-sms|' . $order_id . '|' . $event);
+    $new_order = in_array($to, ['processing', 'on-hold'], true)
+        || ($to === 'completed' && in_array($from, ['pending', 'checkout-draft', 'draft', 'failed'], true));
+    if ($new_order && ($manager = mv_commerce_manager_phone())) {
+        mv_commerce_order_notice($order, 'manager-received', $manager, 'سفارش جدید %s ثبت شد.', 'مدیر');
+    }
+}
+
+function mv_commerce_order_notice(WC_Order $order, string $event, string $phone, string $message, string $recipient): void {
+    $key = hash('sha256', 'order-sms|' . $order->get_id() . '|' . $event);
     if (!mv_commerce_write($key, null, 0, ['result' => 'started'])) {
         return;
     }
@@ -68,6 +76,6 @@ function mv_commerce_order_sms(int $order_id, string $from, string $to, WC_Order
     $accepted = !is_wp_error($result);
     mv_commerce_write($key, $receipt, 0, ['result' => $accepted ? 'accepted' : $result->get_error_code()]);
     $order->add_order_note($accepted
-        ? 'درخواست پیامک وضعیت سفارش توسط سرویس پیامکی پذیرفته شد.'
-        : 'ارسال پیامک وضعیت سفارش تأیید نشد.');
+        ? sprintf('درخواست پیامک وضعیت سفارش برای %s توسط سرویس پیامکی پذیرفته شد.', $recipient)
+        : sprintf('ارسال پیامک وضعیت سفارش برای %s تأیید نشد.', $recipient));
 }

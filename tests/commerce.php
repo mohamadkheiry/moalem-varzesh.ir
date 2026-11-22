@@ -31,6 +31,11 @@ $mock = static function ($pre, array $options, string $url) use (&$requests, &$p
     };
 };
 add_filter('pre_http_request', $mock, 10, 3);
+$manager_phone = '';
+$manager_setting = static function () use (&$manager_phone): string {
+    return $manager_phone;
+};
+add_filter('pre_option_mv_commerce_manager_phone', $manager_setting);
 
 global $wpdb;
 $table = mv_commerce_table();
@@ -38,6 +43,7 @@ $phone = '0900' . random_int(1000000, 9999999);
 $other = '0901' . substr($phone, 4);
 $ip = 'local-test-' . $phone;
 $order = null;
+$manager_orders = [];
 $user_id = 0;
 $keys = [
     mv_commerce_key('otp', $phone), mv_commerce_key('otp', $other),
@@ -151,11 +157,51 @@ try {
     mv_commerce_order_sms($order->get_id(), 'completed', 'cancelled', $order);
     $receipt = mv_commerce_read(end($keys));
     $check(count($requests) === $before + 3 && json_decode($receipt['payload'], true)['result'] === 'sms_transport', 'ambiguous transport failure is recorded without replay');
+
+    require_once ABSPATH . 'wp-admin/includes/template.php';
+    $manager_phone = '0902' . substr($phone, 4);
+    $new_manager = '0903' . substr($phone, 4);
+    $check(mv_commerce_sanitize_manager_phone(' +98 ' . substr($new_manager, 1)) === $new_manager, 'normalize replacement manager mobile');
+    $check(mv_commerce_sanitize_manager_phone('bad phone') === $manager_phone, 'invalid replacement keeps the existing manager mobile');
+    $check(mv_commerce_sanitize_manager_phone('  ') === '', 'a blank manager setting disables alerts');
+
+    $create_order = static function (string $billing_phone) use (&$manager_orders, &$keys): WC_Order {
+        $order = wc_create_order(['created_via' => 'mv-automated-qa']);
+        if (is_wp_error($order)) {
+            throw new RuntimeException('Could not create a manager alert test order.');
+        }
+        $manager_orders[] = $order;
+        foreach (['received', 'completed', 'manager-received'] as $event) {
+            $keys[] = hash('sha256', 'order-sms|' . $order->get_id() . '|' . $event);
+        }
+        $order->set_billing_phone($billing_phone);
+        $order->save();
+        return $order;
+    };
+    $provider = 'accept';
+    $before = count($requests);
+    $first = $create_order('');
+    $first->update_status('on-hold');
+    $notice = end($requests)['body'];
+    $check(count($requests) === $before + 1 && $notice['to'] === [$manager_phone]
+        && str_contains($notice['body'], $first->get_order_number()), 'manager receives a new-order alert without a buyer phone');
+    $manager_phone = $new_manager;
+    $first->update_status('processing');
+    $check(count($requests) === $before + 1, 'changing manager does not replay an existing order alert');
+    $second = $create_order($phone);
+    $second->update_status('completed');
+    $check(count($requests) === $before + 3 && $requests[$before + 1]['body']['to'] === [$phone]
+        && end($requests)['body']['to'] === [$new_manager], 'new manager and buyer get independent alerts on the next order');
+    mv_commerce_order_sms($second->get_id(), 'pending', 'completed', $second);
+    $check(count($requests) === $before + 3, 'manager alert is idempotent on a direct completion');
 } catch (Throwable $exception) {
     $error = $exception->getMessage();
 } finally {
     if ($order instanceof WC_Order) {
         $order->delete(true);
+    }
+    foreach ($manager_orders as $manager_order) {
+        $manager_order->delete(true);
     }
     if ($user_id) {
         require_once ABSPATH . 'wp-admin/includes/user.php';
@@ -165,6 +211,7 @@ try {
         $clear($key);
     }
     remove_filter('pre_http_request', $mock);
+    remove_filter('pre_option_mv_commerce_manager_phone', $manager_setting);
 }
 if ($error !== null) {
     WP_CLI::error($error);

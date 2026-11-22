@@ -449,7 +449,7 @@ const cases = [
         await page.locator('button[name=update_cart]').click();
         await page.waitForFunction(() => document.querySelector('button[name=update_cart]').disabled);
         for (const width of [320, 768, 1440]) {
-            await page.setViewportSize({ width, height: 1000 });
+            await page.setViewportSize({ width, height: width === 1440 ? 1120 : 1000 });
             await go(page, '/cart/');
             await fits();
             assert.ok(await page.locator('.cart_item .product-thumbnail img').isVisible());
@@ -462,6 +462,8 @@ const cases = [
             assert.ok(await page.locator('#customer_details').isVisible());
             assert.ok(await page.locator('.mv-checkout-review .mv-review-item-image img').isVisible());
             assert.ok(await page.locator('#place_order').isVisible());
+            await page.locator('.mv-checkout-review .blockUI').first().waitFor({ state: 'hidden' });
+            assert.equal(await page.locator('.mv-checkout-review .order-total .amount').evaluate(el => getComputedStyle(el).whiteSpace), 'nowrap');
             if (width !== 768) await page.screenshot({ path: resolve(evidence, 'purchase-checkout-' + width + '.png') });
             if (width === 320) {
                 const coupon = page.getByRole('button', { name: 'وارد کردن کد تخفیف' });

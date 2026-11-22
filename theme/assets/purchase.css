@@ -211,9 +211,10 @@
 .mv-purchase #customer_details .select2-container .select2-selection--single { display: flex; align-items: center; }
 .mv-purchase #customer_details .select2-container .select2-selection__arrow { top: 50%; translate: 0 -50%; }
 .mv-checkout-review > h3 { margin-block-end: .75rem; }
-.mv-checkout-review table.shop_table { margin: 0 0 .9rem; border: 0; }
+.mv-checkout-review table.shop_table { margin: 0 0 .9rem; border: 0; table-layout: fixed; }
 .mv-checkout-review table.shop_table :is(td, th) { padding: .55rem .35rem; font-size: .87rem; }
-.mv-checkout-review .product-total { text-align: end; }
+.mv-checkout-review .product-total { width: clamp(7rem, 33%, 10rem); text-align: end; }
+.mv-checkout-review .amount { white-space: nowrap; }
 .mv-checkout-review .product-name { overflow-wrap: anywhere; }
 .mv-review-item-image { display: inline-block; vertical-align: middle; width: 2rem; margin-inline-end: .35rem; border-radius: .4rem; background: var(--purchase-mint); }
 .mv-review-item-image img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: inherit; }

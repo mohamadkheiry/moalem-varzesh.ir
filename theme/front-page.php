@@ -1,6 +1,7 @@
 <?php get_header(); ?>
 <main id="main" class="wrap">
     <?php get_template_part('template-parts/hero'); ?>
+    <?php get_template_part('template-parts/home-shoes'); ?>
     <?php $terms = mv_top_categories(4); if ($terms) : ?>
     <section class="section" aria-labelledby="categories-title">
         <div class="section-head"><h2 id="categories-title">دسته‌بندی کالاها</h2></div>
@@ -23,7 +24,17 @@
         </div>
     </section>
     <?php endif; ?>
+    <?php get_template_part('template-parts/home-guides'); ?>
     <?php if (class_exists('WooCommerce')) : ?>
+    <?php $weekly = mv_weekly_products(); if ($weekly) : ?>
+    <section class="section mv-home-weekly woocommerce" aria-labelledby="weekly-title">
+        <div class="section-head">
+            <h2 id="weekly-title">محصولات منتخب این هفته</h2>
+        </div>
+        <?php echo do_shortcode(sprintf('[products ids="%s" limit="4" columns="4" orderby="post__in" visibility="visible"]',
+            implode(',', array_map('absint', $weekly)))); ?>
+    </section>
+    <?php endif; ?>
     <section class="section woocommerce" aria-labelledby="new-title">
         <div class="section-head">
             <h2 id="new-title">تازه‌های فروشگاه</h2>

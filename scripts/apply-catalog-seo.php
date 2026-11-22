@@ -15,9 +15,15 @@ foreach ($wpdb->get_results("SELECT p.ID, m.meta_value FROM $wpdb->posts p INNER
 if (array_diff(array_column($products, 'id'), array_keys($local))) {
     WP_CLI::error('Import the catalog before running product SEO.');
 }
-if (!get_term_by('slug', 'table-tennis', 'product_cat')) {
-    $new_term = wp_insert_term('تنیس روی میز', 'product_cat', [
-        'slug' => 'table-tennis', 'description' => 'توپ‌ها و وسایل تنیس روی میز برای تمرین و بازی.',
+foreach ([
+    'table-tennis' => ['تنیس روی میز', 'توپ‌ها و وسایل تنیس روی میز برای تمرین و بازی.'],
+    'توپ-های-ورزشی' => ['توپ‌های ورزشی', 'توپ‌های ورزشی موجود برای تنیس روی میز و تمرین پیلاتس.'],
+] as $slug => [$name, $description]) {
+    if (get_term_by('slug', sanitize_title($slug), 'product_cat')) {
+        continue;
+    }
+    $new_term = wp_insert_term($name, 'product_cat', [
+        'slug' => $slug, 'description' => $description,
     ]);
     if (is_wp_error($new_term)) {
         WP_CLI::error($new_term->get_error_message());
@@ -127,6 +133,26 @@ foreach ($products as $source) {
         WP_CLI::error('Could not save Persian SEO metadata for product ' . $source['id']);
     }
     update_post_meta($id, '_mv_seo_topic', $topic);
+}
+
+$pictures = array_column($products, 'images', 'id');
+foreach ([
+    'کتونی-فوتسال' => 12080,
+    'کتونی-فوتبال-استوک-ریز' => 11770,
+    'کتونی-فوتبال-استوک' => 11794,
+] as $slug => $source_id) {
+    $term = get_term_by('slug', sanitize_title($slug), 'product_cat');
+    $source_url = $pictures[$source_id][1]['src'] ?? '';
+    if (!$term || !$source_url) {
+        continue;
+    }
+    $photo = get_posts([
+        'post_type' => 'attachment', 'post_status' => 'inherit', 'fields' => 'ids', 'numberposts' => 1,
+        'meta_key' => '_mv_source_media', 'meta_value' => $source_url,
+    ]);
+    if ($photo) {
+        update_term_meta($term->term_id, '_mv_home_shoe_image', $photo[0]);
+    }
 }
 update_option('mv_catalog_editorial_schema', 1);
 WP_CLI::success(sprintf('SEO metadata for %d products, %d category assignments repaired, %d missing summaries completed, %d editor placeholders removed.',

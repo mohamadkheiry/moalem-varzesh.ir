@@ -3,10 +3,16 @@ defined('ABSPATH') || exit;
 
 function mv_catalog_category_plan(array $product, array $terms): array {
     $aliases = [564 => 271, 565 => 288];
-    $repairs = [10248 => [430], 9879 => [364], 11536 => [338], 11476 => ['table-tennis'], 11464 => ['table-tennis']];
+    $repairs = [
+        10248 => [430],
+        9879 => [364],
+        11536 => [338, 'توپ-های-ورزشی'],
+        11476 => ['table-tennis', 'توپ-های-ورزشی'],
+        11464 => ['table-tennis', 'توپ-های-ورزشی'],
+    ];
     $source = $repairs[$product['id']] ?? array_column($product['categories'], 'id');
     return array_values(array_unique(array_map(static function ($id) use ($aliases, $terms): string {
-        return is_int($id) ? sanitize_title(rawurldecode($terms[$aliases[$id] ?? $id]['slug'])) : $id;
+        return sanitize_title(is_int($id) ? rawurldecode($terms[$aliases[$id] ?? $id]['slug']) : $id);
     }, $source)));
 }
 

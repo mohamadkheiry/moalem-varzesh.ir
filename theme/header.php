@@ -26,7 +26,10 @@
     </div>
     <nav class="wrap main-nav" aria-label="منوی اصلی">
         <a href="<?php echo esc_url(home_url('/')); ?>" <?php if (is_front_page()) echo 'aria-current="page"'; ?>>خانه</a>
-        <a href="<?php echo esc_url(mv_shop_url()); ?>" <?php if (function_exists('is_shop') && (is_shop() || is_product_taxonomy())) echo 'aria-current="page"'; ?>>فروشگاه</a>
+        <div class="mv-shop-nav">
+            <a href="<?php echo esc_url(mv_shop_url()); ?>" <?php if (function_exists('is_shop') && (is_shop() || is_product_taxonomy())) echo 'aria-current="page"'; ?>>فروشگاه</a>
+            <?php if (mv_catalog_term('football')) get_template_part('template-parts/shop-menu'); ?>
+        </div>
         <?php $contact = get_page_by_path('contact-us'); if ($contact) : ?>
         <a href="<?php echo esc_url(get_permalink($contact)); ?>" <?php if (is_page($contact)) echo 'aria-current="page"'; ?>>تماس با ما</a>
         <?php endif; ?>

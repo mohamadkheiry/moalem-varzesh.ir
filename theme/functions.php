@@ -30,13 +30,18 @@ add_action('wp_enqueue_scripts', static function (): void {
     }
     wp_enqueue_script('moalem-social-links', get_theme_file_uri('assets/social-links.js'), [], wp_get_theme()->get('Version'), ['strategy' => 'defer', 'in_footer' => true]);
     if (is_front_page()) {
+        wp_enqueue_style('moalem-home', get_theme_file_uri('assets/home.css'), ['moalem-varzesh'], wp_get_theme()->get('Version'));
         wp_enqueue_script('moalem-hero-slider', get_theme_file_uri('assets/hero-slider.js'), [], wp_get_theme()->get('Version'), ['strategy' => 'defer', 'in_footer' => true]);
+    }
+    if (taxonomy_exists('product_cat')) {
+        wp_enqueue_script('moalem-shop-menu', get_theme_file_uri('assets/shop-menu.js'), [], wp_get_theme()->get('Version'), ['strategy' => 'defer', 'in_footer' => true]);
     }
 }, 20);
 
 function mv_icon(string $name): void {
     $icons = [
         'check' => '<path d="m5 12 4 4L19 6"/>',
+        'chevron' => '<path d="m6 9 6 6 6-6"/>',
         'bag' => '<path d="M5 8h14l1 13H4L5 8Z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/>',
         'arrow' => '<path d="M19 12H5m6-6-6 6 6 6"/>',
         'search' => '<circle cx="11" cy="11" r="6.8"/><path d="m16 16 4.2 4.2"/>',
@@ -202,4 +207,5 @@ if (wp_get_environment_type() === 'local') {
 
 require_once __DIR__ . '/print-options.php';
 require_once __DIR__ . '/editorial.php';
+require_once __DIR__ . '/storefront.php';
 require_once __DIR__ . '/mobile-store.php';

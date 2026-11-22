@@ -378,7 +378,7 @@ const cases = [
     }],
     ['15', 'رسانه‌های شفاف در کارت‌ها و نگاره‌های صفحهٔ کالا', async page => {
         await go(page, '/');
-        const thumbnails = await page.locator('.woocommerce ul.products .woocommerce-LoopProduct-link img')
+        const thumbnails = await page.locator('section[aria-labelledby="new-title"] ul.products .woocommerce-LoopProduct-link img')
             .evaluateAll(imgs => imgs.map(img => new URL(img.src).pathname));
         assert.equal(thumbnails.length, 8);
         assert.ok(thumbnails.every(path => /\/mv-cutouts\/v1\/[a-f0-9]{24}-440x440\.webp$/.test(path)));
@@ -577,6 +577,73 @@ const cases = [
         await page.waitForURL(/mode=otp/);
         assert.equal(new URL(page.url()).searchParams.get('return'), 'checkout');
         assert.equal(await page.locator('.mv-account-method [aria-current=page]').innerText(), 'رمز یک‌بارمصرف');
+    }],
+    ['21', 'منوی دسته‌ها، انتخاب کفش، راهنماها و کالاهای منتخب هفته', async page => {
+        await go(page, '/');
+        const menu = page.locator('#mv-catalog-menu');
+        const trigger = page.getByLabel('دسته‌بندی‌های فروشگاه', { exact: true });
+        const menuLinks = menu.locator('a');
+        const shoeCards = page.locator('.mv-home-shoe');
+        const guideCards = page.locator('.mv-home-guide');
+        const weekly = page.locator('.mv-home-weekly li.product');
+        const weeklyLinks = weekly.locator('.woocommerce-LoopProduct-link');
+        const latestLinks = page.locator('section[aria-labelledby="new-title"] .woocommerce-LoopProduct-link');
+        assert.deepEqual(await page.locator('#shoe-finder-title, #home-guides-title, #weekly-title').allTextContents(),
+            ['کفش مناسب بازی‌تان را پیدا کنید', 'راهنمای خرید و مقالات ورزشی', 'محصولات منتخب این هفته']);
+        assert.equal(await shoeCards.count(), 3);
+        assert.equal(await guideCards.count(), 3);
+        assert.equal(await weekly.count(), 4);
+        assert.equal(await page.locator('.mv-home-weekly li.product.instock').count(), 4);
+        const picks = await weeklyLinks.evaluateAll(links => links.map(link => link.href));
+        assert.equal(new Set(picks).size, 4);
+        const recent = await latestLinks.evaluateAll(links => links.map(link => link.href));
+        assert.ok(picks.every(href => !recent.includes(href)));
+        const shoes = await shoeCards.evaluateAll(cards => cards.map(card => card.href));
+        const guides = await guideCards.locator('a').evaluateAll(links => links.map(link => link.href));
+        assert.deepEqual(await shoeCards.locator('h3').allTextContents(), ['سالن و فوتسال', 'چمن مصنوعی', 'چمن طبیعی']);
+        assert.equal(new Set(guides).size, 3);
+        for (const image of await page.locator('.mv-home-shoe img, .mv-home-guide img').all()) {
+            assert.ok(await image.evaluate(async el => { el.loading = 'eager'; await el.decode(); return el.naturalWidth; }));
+        }
+        assert.equal(await page.locator('.mv-home-shoe img, .mv-home-guide img').count(), 6);
+        for (const width of [320, 390, 768, 1536]) {
+            await page.setViewportSize({ width, height: 920 });
+            assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            assert.equal(await menu.isVisible(), false);
+            if (width === 390) await trigger.click();
+            else await trigger.press('Enter');
+            assert.ok(await menu.isVisible());
+            assert.equal(await menuLinks.count(), 17);
+            assert.deepEqual((await menu.locator('.mv-catalog-heading').allTextContents()).map(text => text.trim()),
+                ['پوشاک و فوتبال', 'کفش ورزشی', 'توپ‌های ورزشی', 'لوازم جانبی']);
+            const box = await menu.boundingBox();
+            assert.ok(box.x >= 0 && box.x + box.width <= width && box.y + box.height <= 920);
+            assert.ok(await menu.evaluate(panel => panel.scrollWidth <= panel.clientWidth));
+            if ([390, 1536].includes(width)) {
+                await page.mouse.move(0, 0);
+                await menu.screenshot({ path: resolve(evidence, 'shop-menu-' + width + '.png') });
+            }
+            await menuLinks.first().press('Escape');
+            assert.equal(await menu.isVisible(), false);
+            assert.ok(await trigger.evaluate(el => el === document.activeElement));
+        }
+        await page.locator('.mv-home-shoes').screenshot({ path: resolve(evidence, 'home-shoe-finder.png') });
+        await page.locator('.mv-home-guides').screenshot({ path: resolve(evidence, 'home-buying-guides.png') });
+        await page.locator('.mv-home-weekly').screenshot({ path: resolve(evidence, 'home-weekly-picks.png') });
+        await trigger.click();
+        await page.locator('#site-search').click();
+        assert.equal(await menu.isVisible(), false);
+        const links = await menuLinks.evaluateAll(anchors => anchors.map(anchor => anchor.href));
+        for (const href of new Set([...links, ...shoes, ...guides, ...picks])) {
+            assert.equal(new URL(href).origin, base);
+            assert.equal((await page.request.get(href, { maxRedirects: 0 })).status(), 200, href);
+        }
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        assert.deepEqual(await weeklyLinks.evaluateAll(links => links.map(link => link.href)), picks);
+        await trigger.click();
+        await menu.getByRole('link', { name: 'توپ‌های ورزشی', exact: true }).click();
+        assert.equal(await page.locator('h1').innerText(), 'توپ‌های ورزشی');
+        assert.equal(await page.locator('ul.products li.product').count(), 3);
     }],
 ];
 

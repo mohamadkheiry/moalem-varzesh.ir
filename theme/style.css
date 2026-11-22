@@ -1,7 +1,7 @@
 /*
 Theme Name: Moalem Varzesh
 Description: قالب فارسی سبک فروشگاه معلم ورزش برای ووکامرس
-Version: 1.6.0
+Version: 1.7.0
 Requires at least: 7.0
 Requires PHP: 8.1
 Text Domain: moalem-varzesh
@@ -195,6 +195,75 @@ button, input, select, textarea { font: inherit; }
 
 .main-nav .guide-link { margin-inline-start: auto; }
 .guide-link svg { display: none; }
+.main-nav { position: relative; z-index: 3; }
+.mv-shop-nav { display: inline-flex; align-items: center; }
+.mv-shop-disclosure summary {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-inline-start: .15rem;
+    border-radius: .55rem;
+    color: var(--green);
+    list-style: none;
+    cursor: pointer;
+}
+.mv-shop-disclosure summary::-webkit-details-marker { display: none; }
+.mv-shop-disclosure summary svg { width: 1.05rem; height: 1.05rem; }
+.mv-shop-disclosure summary:hover, .mv-shop-disclosure[open] summary { background: var(--soft); }
+.mv-shop-disclosure[open] summary svg { rotate: 180deg; }
+.mv-catalog-menu {
+    position: absolute;
+    inset: calc(100% + .35rem) 0 auto;
+    display: grid;
+    gap: .55rem;
+    max-height: min(67svh, 32rem);
+    padding: .6rem;
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    background: var(--white);
+    box-shadow: 0 1rem 2.5rem #14261e22;
+}
+.mv-shop-disclosure:not([open]) .mv-catalog-menu { display: none; }
+.mv-catalog-group { min-width: 0; padding: .45rem .6rem .55rem; border-radius: .65rem; background: var(--soft); }
+.mv-catalog-group ul { padding: 0; margin: 0; list-style: none; }
+.mv-catalog-group ul ul { margin-inline-start: .5rem; padding-inline-start: .3rem; border-inline-start: 1px solid var(--line-strong); }
+.mv-catalog-group .mv-catalog-heading {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    margin: 0 0 .18rem;
+    padding-inline: .42rem;
+    border-block-end: 1px solid var(--line-strong);
+    color: var(--ink);
+    font-size: .95rem;
+    font-weight: 820;
+}
+.main-nav .mv-catalog-group a {
+    display: flex;
+    padding-inline: .42rem;
+    border: 0;
+    border-radius: .4rem;
+    color: var(--ink);
+    font-size: .83rem;
+    font-weight: 660;
+    line-height: 1.55;
+    white-space: normal;
+}
+.main-nav .mv-catalog-heading a { flex: 1; padding-inline: 0; font-size: inherit; font-weight: inherit; }
+.main-nav .mv-catalog-group a:is(:hover, [aria-current="page"]) { color: var(--green); background: var(--white); text-decoration: underline; text-underline-offset: .2em; }
+@media (min-width: 24rem) {
+    .mv-catalog-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+    .mv-catalog-group:first-child { grid-row: span 3; }
+}
+@media (min-width: 64rem) {
+    .mv-catalog-menu { padding: .85rem; grid-template-columns: minmax(0, 1.36fr) repeat(3, minmax(0, 1fr)); align-items: stretch; }
+    .mv-catalog-group { padding: .48rem .75rem .65rem; }
+    .mv-catalog-group:first-child { grid-row: auto; }
+    .mv-catalog-group:first-child > ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem; }
+}
 
 /* Storefront */
 .hero {

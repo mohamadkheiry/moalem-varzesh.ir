@@ -1,0 +1,11 @@
+{
+  "name": "moalem-varzesh-wordpress",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node tests/storefront.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.1"
+  }
+}

@@ -17,8 +17,17 @@ function mv_theme_setup(): void {
 }
 add_action('after_setup_theme', 'mv_theme_setup');
 
+function mv_licensed_store_font_url(): string {
+    $relative = '/uploads/mv-fonts/digikala.woff2';
+    return is_readable(WP_CONTENT_DIR . $relative) ? content_url($relative) : '';
+}
+
 add_action('wp_enqueue_scripts', static function (): void {
     wp_enqueue_style('moalem-varzesh', get_stylesheet_uri(), [], wp_get_theme()->get('Version'));
+    if ($font = mv_licensed_store_font_url()) {
+        wp_add_inline_style('moalem-varzesh', '@font-face{font-family:Digikala;src:url("' . esc_url_raw($font)
+            . '") format("woff2");font-weight:100 1000;font-display:swap}body{font-family:Digikala,Vazirmatn,sans-serif}');
+    }
     wp_enqueue_style('moalem-support', get_theme_file_uri('assets/support.css'), ['moalem-varzesh'], wp_get_theme()->get('Version'));
     if (is_home() || is_category() || is_singular('post')) {
         wp_enqueue_style('moalem-editorial', get_theme_file_uri('assets/editorial.css'), ['moalem-varzesh'], wp_get_theme()->get('Version'));

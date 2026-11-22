@@ -71,9 +71,9 @@ function mv_commerce_otp_verify(string $phone, string $code, string $scope = 'ot
     return false;
 }
 
-function mv_commerce_find_customer(string $phone): int {
+function mv_commerce_customer_for_mobile(string $phone, string $meta): int {
     $users = get_users([
-        'meta_key' => '_mv_verified_mobile',
+        'meta_key' => $meta,
         'meta_value' => $phone,
         'role' => 'customer',
         'fields' => 'ID',
@@ -83,22 +83,83 @@ function mv_commerce_find_customer(string $phone): int {
         && !mv_commerce_is_manager((int) $users[0]) ? (int) $users[0] : 0;
 }
 
-function mv_commerce_user_for_verified_phone(string $phone, string $password) {
-    $id = mv_commerce_find_customer($phone);
-    if ($id) {
-        if ($password !== '') {
-            wp_set_password($password, $id);
-        }
-        return $id;
+function mv_commerce_find_customer(string $phone): int {
+    return mv_commerce_customer_for_mobile($phone, '_mv_verified_mobile');
+}
+
+function mv_commerce_with_mobile_lock(string $phone, callable $action) {
+    global $wpdb;
+    $lock = mv_commerce_key('customer-mobile-lock', $phone);
+    if ((string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 3)', $lock)) !== '1') {
+        return new WP_Error('account_busy');
     }
-    $id = wp_insert_user([
-        'user_login' => 'mv-' . substr(mv_commerce_key('customer', $phone), 0, 36),
+    try {
+        return $action();
+    } finally {
+        $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
+    }
+}
+
+function mv_commerce_create_customer(string $phone, string $password, bool $verified) {
+    return wp_insert_user([
+        'user_login' => 'mv-' . substr(mv_commerce_key($verified ? 'customer' : 'temporary-customer', $phone), 0, 36),
         'user_pass' => $password !== '' ? $password : wp_generate_password(32, true, true),
         'display_name' => 'کاربر فروشگاه',
         'role' => 'customer',
-        'meta_input' => ['_mv_verified_mobile' => $phone, 'billing_phone' => $phone],
+        'meta_input' => [($verified ? '_mv_verified_mobile' : '_mv_unverified_mobile') => $phone, 'billing_phone' => $phone],
     ]);
-    return $id;
+}
+
+function mv_commerce_mobile_in_use(string $phone, array $keys): bool {
+    $query = ['relation' => 'OR'];
+    foreach ($keys as $key) {
+        $query[] = ['key' => $key, 'value' => $phone];
+    }
+    return (bool) get_users(['fields' => 'ID', 'number' => 1, 'meta_query' => $query]);
+}
+
+function mv_commerce_valid_password(string $password): bool {
+    return mb_strlen($password) >= 8 && strlen($password) <= 4096 && trim($password) === $password && !str_contains($password, "\0");
+}
+
+function mv_commerce_register_customer(string $phone, string $password, string $ip) {
+    if (!mv_commerce_valid_password($password)) {
+        return new WP_Error('weak_password');
+    }
+    if (!mv_commerce_limit(mv_commerce_key('register-ip', $ip), 10, 15 * MINUTE_IN_SECONDS)
+        || !mv_commerce_limit(mv_commerce_key('register-phone', $phone), 4, 15 * MINUTE_IN_SECONDS)) {
+        return new WP_Error('register_limit');
+    }
+    return mv_commerce_with_mobile_lock($phone, static function () use ($phone, $password) {
+        if (mv_commerce_mobile_in_use($phone, ['_mv_verified_mobile', '_mv_unverified_mobile'])) {
+            return new WP_Error('mobile_in_use');
+        }
+        return mv_commerce_create_customer($phone, $password, false);
+    });
+}
+
+function mv_commerce_user_for_verified_phone(string $phone, string $password) {
+    return mv_commerce_with_mobile_lock($phone, static function () use ($phone, $password) {
+        if ($id = mv_commerce_find_customer($phone)) {
+            if ($password !== '') {
+                wp_set_password($password, $id);
+            }
+            return $id;
+        }
+        if (mv_commerce_mobile_in_use($phone, ['_mv_verified_mobile'])) {
+            return new WP_Error('mobile_in_use');
+        }
+        // A code proves ownership of the phone. Retaining the password-only account also requires its password.
+        $pending = get_userdata(mv_commerce_customer_for_mobile($phone, '_mv_unverified_mobile'));
+        if ($pending && $password !== '' && wp_check_password($password, $pending->user_pass, $pending->ID)) {
+            if (!update_user_meta($pending->ID, '_mv_verified_mobile', $phone)) {
+                return new WP_Error('account_save_failed');
+            }
+            delete_user_meta($pending->ID, '_mv_unverified_mobile', $phone);
+            return $pending->ID;
+        }
+        return mv_commerce_create_customer($phone, $password, true);
+    });
 }
 
 function mv_commerce_password_login(string $phone, string $password, string $ip) {
@@ -106,8 +167,16 @@ function mv_commerce_password_login(string $phone, string $password, string $ip)
         || !mv_commerce_limit(mv_commerce_key('password-phone', $phone), 8, 15 * MINUTE_IN_SECONDS)) {
         return new WP_Error('login_limit');
     }
+    if ($password === '' || strlen($password) > 4096) {
+        return new WP_Error('invalid_login');
+    }
     $user = get_userdata(mv_commerce_find_customer($phone));
-    if (!$user || $password === '' || strlen($password) > 4096) {
+    $pending = get_userdata(mv_commerce_customer_for_mobile($phone, '_mv_unverified_mobile'));
+    if ($pending && (!$user || (!wp_check_password($password, $user->user_pass, $user->ID)
+        && wp_check_password($password, $pending->user_pass, $pending->ID)))) {
+        $user = $pending;
+    }
+    if (!$user) {
         return new WP_Error('invalid_login');
     }
     return wp_signon(['user_login' => $user->user_login, 'user_password' => $password, 'remember' => true], is_ssl());
@@ -115,13 +184,24 @@ function mv_commerce_password_login(string $phone, string $password, string $ip)
 
 function mv_commerce_account_mode(): string {
     $mode = isset($_GET['mode']) && is_string($_GET['mode']) ? sanitize_key($_GET['mode']) : '';
-    return in_array($mode, ['otp', 'verify'], true) ? $mode : 'login';
+    return in_array($mode, ['otp', 'verify', 'register'], true) ? $mode : 'login';
+}
+
+function mv_commerce_modal_request(): bool {
+    return ($_GET['mv_modal'] ?? '') === '1';
 }
 
 function mv_commerce_account_url(string $mode = 'login'): string {
     $args = $mode === 'login' ? [] : ['mode' => $mode];
-    if (($_GET['return'] ?? '') === 'checkout') {
-        $args['return'] = 'checkout';
+    $return = $_GET['return'] ?? '';
+    if (in_array($return, ['cart', 'checkout', 'product'], true)) {
+        $args['return'] = $return;
+        if ($return === 'product' && isset($_GET['product']) && is_scalar($_GET['product'])) {
+            $args['product'] = absint($_GET['product']);
+        }
+    }
+    if (mv_commerce_modal_request()) {
+        $args['mv_modal'] = '1';
     }
     return add_query_arg($args, wc_get_page_permalink('myaccount'));
 }
@@ -155,9 +235,24 @@ function mv_commerce_account_error(string $message): void {
 }
 
 function mv_commerce_account_redirect(): void {
-    $target = ($_GET['return'] ?? '') === 'checkout' ? wc_get_checkout_url() : wc_get_page_permalink('myaccount');
+    $return = $_GET['return'] ?? '';
+    $target = match ($return) {
+        'checkout' => wc_get_checkout_url(),
+        'cart' => wc_get_cart_url(),
+        'product' => mv_commerce_purchase_return_url(),
+        default => wc_get_page_permalink('myaccount'),
+    };
+    if (mv_commerce_modal_request()) {
+        $target = add_query_arg('mv_modal', '1', wc_get_page_permalink('myaccount'));
+    }
     wp_safe_redirect($target, 303);
     exit;
+}
+
+function mv_commerce_start_customer_session(int $id): void {
+    $user = wp_set_current_user($id);
+    wp_set_auth_cookie($id, true, is_ssl());
+    do_action('wp_login', $user->user_login, $user);
 }
 
 function mv_commerce_account_otp_timing(string $phone): ?array {
@@ -176,7 +271,7 @@ function mv_commerce_account_otp_timing(string $phone): ?array {
 
 add_action('wp_enqueue_scripts', static function (): void {
     if (function_exists('is_account_page') && is_account_page() && !is_user_logged_in() && mv_commerce_account_mode() === 'verify') {
-        wp_enqueue_script('mv-account-otp', plugins_url('assets/account-otp.js', __FILE__), [], '1.0.0', ['in_footer' => true, 'strategy' => 'defer']);
+        wp_enqueue_script('mv-account-otp', plugins_url('assets/account-otp.js', __FILE__), [], '1.5.0', ['in_footer' => true, 'strategy' => 'defer']);
     }
 });
 
@@ -191,7 +286,7 @@ add_action('template_redirect', static function (): void {
         exit;
     }
     $action = mv_commerce_field('mv_action');
-    if (!in_array($action, ['login', 'otp', 'verify'], true)) {
+    if (!in_array($action, ['login', 'otp', 'verify', 'register'], true)) {
         return;
     }
     if (!wp_verify_nonce(mv_commerce_field('_mv_nonce'), mv_commerce_account_nonce())) {
@@ -204,6 +299,24 @@ add_action('template_redirect', static function (): void {
         return;
     }
     $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+    if ($action === 'register') {
+        $password = mv_commerce_field('mv_password');
+        if ($password !== mv_commerce_field('mv_password_confirmation')) {
+            mv_commerce_account_error('تکرار رمز عبور را دوباره بررسی کنید.');
+            return;
+        }
+        $result = mv_commerce_register_customer($phone, $password, $ip);
+        if (is_wp_error($result)) {
+            mv_commerce_account_error(match ($result->get_error_code()) {
+                'weak_password' => 'رمز عبور باید دست‌کم ۸ نویسه داشته باشد و با فاصله شروع یا تمام نشود.',
+                'register_limit' => 'تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.',
+                default => 'ساخت حساب انجام نشد. اگر حساب دارید، از یکی از روش‌های ورود استفاده کنید.',
+            });
+            return;
+        }
+        mv_commerce_start_customer_session($result);
+        mv_commerce_account_redirect();
+    }
     if ($action === 'login') {
         $result = mv_commerce_password_login($phone, mv_commerce_field('mv_password'), $ip);
         if (is_wp_error($result)) {
@@ -254,7 +367,7 @@ add_action('template_redirect', static function (): void {
 
     $code = mv_commerce_digits(mv_commerce_field('mv_code'));
     $password = mv_commerce_field('mv_password');
-    if ($password !== '' && (strlen($password) < 8 || strlen($password) > 4096 || trim($password) !== $password)) {
+    if ($password !== '' && !mv_commerce_valid_password($password)) {
         mv_commerce_account_error('رمز جدید باید دست‌کم ۸ نویسه داشته باشد و با فاصله شروع یا تمام نشود.');
         return;
     }
@@ -270,11 +383,23 @@ add_action('template_redirect', static function (): void {
         return;
     }
     WC()->session->__unset('mv_otp_phone');
-    $user = wp_set_current_user($id);
-    wp_set_auth_cookie($id, true, is_ssl());
-    do_action('wp_login', $user->user_login, $user);
+    mv_commerce_start_customer_session($id);
     mv_commerce_account_redirect();
 }, 9);
+
+add_action('template_redirect', static function (): void {
+    if (!function_exists('is_account_page') || !is_account_page() || !mv_commerce_modal_request()) {
+        return;
+    }
+    nocache_headers();
+    header('Content-Type: text/html; charset=' . get_bloginfo('charset'));
+    if (is_user_logged_in()) {
+        echo '<span data-mv-authenticated></span>';
+    } else {
+        require __DIR__ . '/templates/form-login.php';
+    }
+    exit;
+}, 11);
 
 add_filter('woocommerce_locate_template', static function (string $path, string $name): string {
     return $name === 'myaccount/form-login.php' ? __DIR__ . '/templates/form-login.php' : $path;

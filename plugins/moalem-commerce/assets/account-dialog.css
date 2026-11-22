@@ -1,0 +1,98 @@
+.mv-account-dialog {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    box-sizing: border-box;
+    inline-size: min(calc(100% - 1.5rem), 29rem);
+    max-block-size: min(90dvh, 44rem);
+    padding: clamp(1.05rem, 4vw, 1.95rem);
+    border: 1px solid #dbe3d8;
+    border-radius: 1.35rem;
+    background: #fffefa;
+    color: #172c23;
+    box-shadow: 0 1.25rem 5rem #142b2450;
+    overscroll-behavior: contain;
+}
+.mv-account-dialog::backdrop { background: #142821a6; }
+body:has(.mv-account-dialog[open]) { overflow: hidden; }
+.mv-account-dialog .mv-account { display: block; margin: 0; padding: 0; }
+.mv-account-dialog .mv-account-panel { padding: 0; border: 0; background: none; box-shadow: none; }
+.mv-account-dialog h2 { margin: .15rem 0 .3rem; padding-inline-end: 3rem; font-size: 1.5rem; }
+.mv-account-dialog h2:focus { outline: none; }
+.mv-account-dialog-close {
+    position: absolute;
+    inset-block-start: .85rem;
+    inset-inline-end: .85rem;
+    display: grid;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: #ecf1e9;
+    color: #214b36;
+    font: inherit;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+.mv-account-dialog-close:hover { background: #dce9df; }
+.mv-account-dialog .mv-account-intro { margin: 0 0 1rem; color: #42554c; font-size: .92rem; }
+.mv-account-dialog .mv-account-method { display: flex; gap: .25rem; padding: .22rem; border-radius: .75rem; background: #edf3eb; }
+.mv-account-dialog .mv-account-method a {
+    display: grid;
+    flex: 1;
+    min-height: 2.75rem;
+    place-items: center;
+    padding-inline: .2rem;
+    border: 1px solid transparent;
+    border-radius: .55rem;
+    color: #254d39;
+    font-size: .82rem;
+    text-align: center;
+    text-decoration: none;
+}
+.mv-account-dialog .mv-account-method a[aria-current="page"] { border-color: #d5e2d7; background: #fffefa; font-weight: 780; }
+.mv-account-dialog .mv-account-panel form.woocommerce-form.login { margin: .75rem 0 0; padding: 0; border: 0; }
+.mv-account-dialog .form-row { margin: .65rem 0; }
+.mv-account-dialog .form-row label { display: block; margin-block-end: .25rem; font-size: .9rem; font-weight: 700; }
+.mv-account-dialog .form-row input {
+    width: 100%;
+    min-height: 2.85rem;
+    padding: .48rem .65rem;
+    border: 1px solid #cbd9ce;
+    border-radius: .6rem;
+    background: #fff;
+    color: inherit;
+    font: inherit;
+    font-size: 1rem;
+}
+.mv-account-dialog .form-row small { display: block; margin-block-start: .3rem; color: #485d50; line-height: 1.6; }
+.woocommerce .mv-account-dialog button.button.mv-account-submit,
+.mv-account-dialog button.button.mv-account-submit {
+    width: 100%;
+    min-height: 2.9rem;
+    margin-block-start: .35rem;
+    border: 0;
+    border-radius: .62rem;
+    background: #244f3b;
+    color: #fff;
+    font: inherit;
+    font-weight: 750;
+    cursor: pointer;
+}
+.woocommerce .mv-account-dialog button.button.mv-account-submit:hover,
+.mv-account-dialog button.button.mv-account-submit:hover { background: #173a2b; color: #fff; }
+.mv-account-dialog button.button.mv-account-submit:disabled { opacity: .55; cursor: default; }
+.mv-account-dialog .mv-otp-validity { display: flex; justify-content: space-between; gap: .45rem; padding: .48rem .68rem; border-radius: .55rem; background: #e9f2e9; color: #204e38; font-size: .85rem; }
+.mv-account-dialog .mv-otp-validity[hidden] { display: none; }
+.mv-account-dialog .mv-otp-expired { background: #f8efeb; color: #863b34; }
+.mv-account-dialog .mv-otp-resend { min-height: 2.75rem; padding-inline: 0; border: 0; background: none; color: #244f3b; font: inherit; font-size: .85rem; cursor: pointer; }
+.mv-account-dialog .mv-otp-resend:disabled { color: #556b5a; cursor: default; }
+.mv-account-dialog [role="timer"] { font-variant-numeric: tabular-nums; }
+.mv-account-dialog .mv-account-links { display: flex; flex-wrap: wrap; column-gap: .85rem; }
+.mv-account-dialog .mv-account-links a { display: inline-flex; align-items: center; min-height: 2.75rem; color: #244f3b; font-size: .86rem; }
+.mv-account-dialog .woocommerce-error { margin-block: .65rem; padding: .65rem .8rem; border: 1px solid #d9b2ad; border-radius: .6rem; background: #fbefeb; color: #76312b; list-style: none; }
+.mv-account-dialog .woocommerce-error::before { display: none; }
+.mv-account-dialog-status { padding-inline-end: 3rem; }
+.mv-account-dialog-content[inert] { opacity: .6; }
+.mv-account-dialog :focus-visible { outline: 2px solid #2b694d; outline-offset: 3px; }

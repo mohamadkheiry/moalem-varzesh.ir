@@ -25,12 +25,14 @@ add_filter('pre_http_request', static function ($pre, array $config, string $url
         return $pre;
     }
     $payload = json_decode($config['body'], true);
-    if (($payload['to'] ?? []) !== [$fixture['phone']]) {
+    $target = $payload['to'] ?? [];
+    if ($target !== [$fixture['phone']] && $target !== [$fixture['purchasePhones']['25'] ?? '']) {
         return new WP_Error('local_mock_blocked');
     }
     preg_match('/[0-9]{6}/', $payload['body'] ?? '', $code);
     if (isset($code[0]) && (str_contains($payload['body'], 'کد ورود') || str_contains($payload['body'], 'کد تأیید شمارهٔ ورود مدیر'))) {
-        if (($_SERVER['HTTP_X_MV_QA_MODE'] ?? '') === $fixture['tag'] && !file_exists($fixture['capture'] . '.failed')) {
+        if ($target === [$fixture['phone']] && ($_SERVER['HTTP_X_MV_QA_MODE'] ?? '') === $fixture['tag']
+            && !file_exists($fixture['capture'] . '.failed')) {
             file_put_contents($fixture['capture'] . '.failed', '', LOCK_EX);
             return ['response' => ['code' => (int) ($fixture['failureStatus'] ?? 503)], 'body' => '{"success":false}'];
         }
@@ -47,7 +49,8 @@ if (($_SERVER['HTTP_X_MV_QA_MODE'] ?? '') === $fixture['tag']) {
     // A separate limit scope for the fixture avoids changing localhost login counters.
     $_SERVER['REMOTE_ADDR'] = '127.0.0.2';
     add_action('user_register', static function (int $id) use ($fixture): void {
-        if (get_user_meta($id, '_mv_verified_mobile', true) === $fixture['phone']) {
+        $phone = get_user_meta($id, '_mv_verified_mobile', true) ?: get_user_meta($id, '_mv_unverified_mobile', true);
+        if (in_array($phone, array_merge([$fixture['phone']], array_values($fixture['purchasePhones'] ?? [])), true)) {
             add_user_meta($id, '_mv_browser_qa_tag', $fixture['tag'], true);
         }
     });

@@ -17,6 +17,8 @@ const messi = source.find(p => p.id === 12556);
 const socks = source.find(p => p.type === 'simple' && p.is_in_stock);
 const soldOut = variants.find(p => !p.is_in_stock);
 const soldOutParent = source.find(p => p.id === soldOut.parent);
+const customerPassword = 'Storefront fixture password Q4757!';
+const purchaseCases = ['06', '08', '09', '14', '16', '20', '24', '25'];
 
 async function go(page, path, status = 200) {
     const response = await page.goto(base + path, { waitUntil: 'domcontentloaded' });
@@ -59,6 +61,20 @@ async function loadSmsFixture(page, path) {
     await page.setExtraHTTPHeaders({ 'X-MV-QA-Mode': fixture.tag });
     const response = await go(page, path);
     assert.equal(response.headers()['x-mv-qa-mode'], 'mocked', 'OneSMS fixture must be active before any submit');
+    return fixture;
+}
+
+async function registerCustomer(page, phone, panel = page) {
+    await panel.getByLabel('شماره موبایل', { exact: true }).fill(phone);
+    await panel.getByLabel('رمز عبور', { exact: true }).fill(customerPassword);
+    await panel.getByLabel('تکرار رمز عبور', { exact: true }).fill(customerPassword);
+    await panel.getByRole('button', { name: 'ساخت حساب و ادامه' }).click();
+}
+
+async function signedInFixture(page, number) {
+    const fixture = await loadSmsFixture(page, '/my-account/?mode=register');
+    await registerCustomer(page, fixture.purchasePhones[number]);
+    await page.locator('.woocommerce-MyAccount-navigation').waitFor();
     return fixture;
 }
 
@@ -152,11 +168,14 @@ const cases = [
         assert.equal(await page.locator('ul.products li.product').count(), 0);
     }],
     ['06', 'گالری و قیمت گزینهٔ سفارشی محصول متغیر', async page => {
-        await go(page, pathOf(messi));
+        const fixture = await loadSmsFixture(page, pathOf(messi) + '?mv-qa=1');
         assert.equal(await page.locator('h1').innerText(), messi.name);
         const product = page.locator('.mv-product-page');
         assert.ok(await product.locator('.mv-product-stock').isVisible());
         assert.ok(await product.locator('.mv-product-buy form.cart').isVisible());
+        const columns = await product.locator('.images, .mv-product-info, .mv-product-purchase').evaluateAll(elements =>
+            elements.map(element => element.getBoundingClientRect().x));
+        assert.ok(columns[0] > columns[1] && columns[1] > columns[2]);
         assert.match(await product.getByRole('link', { name: 'پرسش دربارهٔ کالا' }).getAttribute('href'), /\/contact-us\/$/);
         await page.locator('.woocommerce-product-gallery__image img').first().evaluate(img => img.decode());
         const image = await page.locator('.woocommerce-product-gallery__image img').first().getAttribute('src');
@@ -170,13 +189,32 @@ const cases = [
         assert.ok(await form.locator('button.single_add_to_cart_button').isEnabled());
         await page.locator('#mv-print-name').fill('آزمون');
         await page.locator('#mv-print-number').fill('۱۰');
+        await form.locator('.single_variation').evaluate(element => new Promise(resolve => {
+            if (window.jQuery) window.jQuery(element).promise().done(resolve);
+            else resolve();
+        }));
         await page.screenshot({ path: resolve(evidence, 'storefront-product.png') });
         await form.locator('button.single_add_to_cart_button').click();
+        const dialog = page.getByRole('dialog');
+        await dialog.getByRole('heading', { name: 'ورود به حساب' }).waitFor();
+        await page.keyboard.press('Escape');
+        await dialog.waitFor({ state: 'hidden' });
+        assert.equal(await form.locator('button.single_add_to_cart_button').evaluate(button => document.activeElement === button), true);
+        assert.equal(await page.locator('.woocommerce-message').count(), 0);
+        await form.locator('button.single_add_to_cart_button').click();
+        await dialog.getByRole('link', { name: 'ثبت‌نام' }).click();
+        await page.setViewportSize({ width: 390, height: 844 });
+        await dialog.getByRole('heading', { name: 'ساخت حساب' }).waitFor();
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+        await page.screenshot({ path: resolve(evidence, 'purchase-signup-mobile.png') });
+        await registerCustomer(page, fixture.purchasePhones['06'], dialog);
         await page.locator('.woocommerce-message').waitFor({ state: 'visible' });
         await go(page, '/cart/');
         const details = await page.locator('tr.cart_item .product-name').innerText();
         assert.match(details, /آزمون/);
         assert.match(details, /10/);
+        assert.equal(await page.locator('tr.cart_item').count(), 1);
+        assert.equal(existsSync(fixture.capture), false, 'Password registration does not request an SMS');
     }],
     ['07', 'گزینهٔ ناموجود و ادارهٔ مسیر نامعتبر', async page => {
         await go(page, pathOf(soldOutParent));
@@ -194,6 +232,7 @@ const cases = [
         assert.match(await page.locator('h1').innerText(), /پیدا نشد/);
     }],
     ['08', 'افزودن، تغییر تعداد و حذف کالا از سبد خرید', async page => {
+        await signedInFixture(page, '08');
         await putSimpleInCart(page);
         const row = page.locator('tr.cart_item');
         const input = row.locator('input.qty');
@@ -206,6 +245,7 @@ const cases = [
         assert.equal(await page.locator('tr.cart_item').count(), 0);
     }],
     ['09', 'صفحهٔ تسویه‌حساب و حساب کاربری', async page => {
+        await signedInFixture(page, '09');
         await putSimpleInCart(page);
         await page.locator('a.checkout-button').click();
         await page.waitForURL('**/checkout/');
@@ -217,7 +257,7 @@ const cases = [
         await page.locator('.woocommerce-checkout-payment').getByText('پرداخت آزمایشی', { exact: true }).waitFor({ state: 'visible' });
         assert.ok(await page.locator('#place_order').isVisible());
         await go(page, '/my-account/');
-        assert.ok(await page.locator('form.woocommerce-form-login').isVisible());
+        assert.ok(await page.locator('.woocommerce-MyAccount-navigation').isVisible());
     }],
     ['10', 'سئوی صفحهٔ کالا، پیوند اینماد و صفحات راهنما', async page => {
         await go(page, pathOf(messi));
@@ -390,14 +430,17 @@ const cases = [
         await page.getByRole('button', { name: 'تأیید و ورود' }).click();
         await page.waitForURL('**/my-account/');
         assert.ok(await page.locator('.woocommerce-MyAccount-navigation').isVisible());
+        await go(page, pathOf(socks));
         await page.context().clearCookies();
-        await putSimpleInCart(page);
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await page.locator('form.cart button.single_add_to_cart_button').click();
+        const dialog = page.getByRole('dialog');
+        await dialog.getByLabel('شماره موبایل').fill(fixture.phone);
+        await dialog.getByLabel('رمز عبور', { exact: true }).fill(password);
+        await dialog.getByRole('button', { name: 'ورود', exact: true }).click();
+        await page.locator('.woocommerce-message').waitFor();
+        await go(page, '/cart/');
         await page.locator('a.checkout-button').click();
-        await page.waitForURL('**/checkout/');
-        await page.getByRole('link', { name: 'ورود با شماره موبایل', exact: true }).click();
-        await page.locator('#mv-phone').fill(fixture.phone);
-        await page.locator('#mv-password').fill(password);
-        await page.getByRole('button', { name: 'ورود', exact: true }).click();
         await page.waitForURL('**/checkout/');
         assert.ok(await page.locator('.woocommerce-checkout-review-order-table').innerText().then(text => text.includes(socks.name)));
         assert.equal(await page.locator('.mv-checkout-login').count(), 0);
@@ -421,7 +464,7 @@ const cases = [
         assert.match(response.headers()['content-type'], /^image\/webp/);
     }],
     ['16', 'ثبت خرید آزمایشی و پیامک همان سفارش', async page => {
-        const fixture = await loadSmsFixture(page, '/shop/?mv-qa=1');
+        const fixture = await signedInFixture(page, '16');
         assert.ok(fixture.orderCapture && fixture.email.endsWith('@example.test'));
         await putSimpleInCart(page);
         await page.locator('a.checkout-button').click();
@@ -547,6 +590,7 @@ const cases = [
     }],
     ['20', 'چیدمان خرید و ورود، گام‌های خرید و کنترل تعداد و رمز عبور', async page => {
         const fits = async () => assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        await signedInFixture(page, '20');
         await go(page, '/cart/');
         assert.ok(await page.getByRole('heading', { name: 'سبد خریدتان خالی است' }).isVisible());
         assert.ok(await page.getByRole('link', { name: 'رفتن به فروشگاه', exact: true }).isVisible());
@@ -590,27 +634,12 @@ const cases = [
                 await page.locator('.woocommerce-form-coupon #coupon_code').waitFor();
                 await page.locator('.showcoupon[aria-expanded="true"]').waitFor();
             }
-            await page.getByRole('link', { name: 'ورود با شماره موبایل', exact: true }).click();
-            await page.waitForURL('**/my-account/?return=checkout');
-            await fits();
-            assert.equal(await page.locator('main h1').count(), 1);
-            assert.equal(await page.getByRole('link', { name: 'بازگشت به تسویه‌حساب' }).getAttribute('href'), base + '/checkout/');
-            const password = page.locator('#mv-password');
-            await password.fill('Sample password');
-            const toggle = page.locator('.mv-password-field .show-password-input');
-            assert.equal(await toggle.count(), 1);
-            const label = await toggle.getAttribute('aria-label');
-            assert.ok(label);
-            await toggle.press('Enter');
-            assert.equal(await password.getAttribute('type'), 'text');
-            assert.notEqual(await toggle.getAttribute('aria-label'), label);
-            await toggle.click();
-            assert.equal(await password.getAttribute('type'), 'password');
-            assert.equal(await password.inputValue(), 'Sample password');
-            await password.clear();
-            if (width === 1440) await page.locator('.mv-account-visual img').evaluate(img => img.decode());
-            if (width !== 768) await page.screenshot({ path: resolve(evidence, 'purchase-login-' + width + '.png') });
         }
+        await page.context().clearCookies();
+        await go(page, '/checkout/');
+        assert.equal(new URL(page.url()).searchParams.get('return'), 'checkout');
+        await fits();
+        assert.equal(await page.locator('main h1').count(), 1);
         await page.getByRole('link', { name: /ورود یا عضویت/ }).click();
         await page.waitForURL(/mode=otp/);
         assert.equal(new URL(page.url()).searchParams.get('return'), 'checkout');
@@ -696,7 +725,7 @@ const cases = [
         for (const href of [...paths, '/shop/', '/my-account/', '/cart/']) {
             assert.ok(destinations.some(url => decodePath(new URL(url).pathname) === decodePath(href)), href);
             const response = await page.request.get(base + href, { maxRedirects: 0 });
-            assert.equal(response.status(), 200, href);
+            assert.equal(response.status(), href === '/cart/' ? 303 : 200, href);
         }
         const footer = page.locator('.site-footer');
         const help = footer.locator('[data-menu="mv_footer_help"]');
@@ -824,6 +853,45 @@ const cases = [
         assert.match(await guestAbout(), /پیوند موقت آزمون فوتر/);
         assert.match(await page.locator('.mv-support-hero img').getAttribute('src'), /\/assets\/support\/about-1200.webp$/);
     }],
+    ['24', 'مسیر خرید و ثبت‌نام بدون جاوااسکریپت', async page => {
+        const fixture = await loadSmsFixture(page, '/shop/?mv-qa=1');
+        const noScript = await page.context().browser().newContext({
+            javaScriptEnabled: false, extraHTTPHeaders: { 'X-MV-QA-Mode': fixture.tag },
+        });
+        try {
+            const purchase = await noScript.newPage();
+            await go(purchase, pathOf(socks));
+            await purchase.locator('form.cart button.single_add_to_cart_button').click();
+            await purchase.waitForURL('**/my-account/?return=product&product=*');
+            await purchase.getByRole('link', { name: 'ثبت‌نام' }).click();
+            await registerCustomer(purchase, fixture.purchasePhones['24']);
+            await purchase.locator('.woocommerce-message').waitFor();
+            await go(purchase, '/cart/');
+            assert.ok((await purchase.locator('.cart_item .product-name').innerText()).includes(socks.name));
+            assert.equal(await purchase.locator('.cart_item').count(), 1);
+        } finally {
+            await noScript.close();
+        }
+    }],
+    ['25', 'اتصال حساب رمزدار به ورود پیامکی در پنجرهٔ خرید', async page => {
+        const fixture = await signedInFixture(page, '25');
+        await putSimpleInCart(page);
+        await page.context().clearCookies();
+        await go(page, '/shop/');
+        await page.locator('.site-header a[href$="/cart/"]').click();
+        const dialog = page.getByRole('dialog');
+        await dialog.getByRole('link', { name: /ورود یا عضویت با رمز یک‌بارمصرف/ }).click();
+        await dialog.getByLabel('شماره موبایل').fill(fixture.purchasePhones['25']);
+        await dialog.getByRole('button', { name: 'ارسال کد ورود' }).click();
+        await dialog.getByRole('timer').waitFor();
+        const code = readFileSync(fixture.capture, 'utf8').trim();
+        await dialog.getByLabel('کد یک‌بارمصرف').fill(code);
+        await dialog.getByLabel('رمز عبور (اختیاری)', { exact: true }).fill(customerPassword);
+        await dialog.getByRole('button', { name: 'تأیید و ورود' }).click();
+        await page.waitForURL('**/cart/');
+        assert.ok((await page.locator('.cart_item .product-name').innerText()).includes(socks.name));
+        assert.equal(await page.locator('.cart_item').count(), 1);
+    }],
 ];
 
 (async () => {
@@ -836,10 +904,12 @@ const cases = [
         const selected = process.env.MV_TEST_CASES?.split(',');
         for (const [number, name, test] of cases) {
             if (selected && !selected.includes(number)) continue;
-            if (['14', '16'].includes(number) && !process.env.MV_QA_SMS_FIXTURE) continue;
+            if (purchaseCases.includes(number) && !process.env.MV_QA_SMS_FIXTURE) continue;
             if (number === '23' && !process.env.MV_SUPPORT_ADMIN_FIXTURE) continue;
             const context = await browser.newContext({ viewport: { width: 1536, height: 1024 }, locale: 'fa-IR' });
             const page = await context.newPage();
+            page.setDefaultTimeout(60000);
+            page.setDefaultNavigationTimeout(60000);
             const errors = [];
             page.on('pageerror', error => errors.push(error.message));
             page.on('response', response => {

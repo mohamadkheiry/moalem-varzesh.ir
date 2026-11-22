@@ -38,7 +38,7 @@ async function request(path, data) {
   return [response.status, await response.json()];
 }
 
-test('A guest can transfer a personalized cart to WooCommerce checkout', async () => {
+test('A guest can transfer a personalized cart to the WooCommerce sign-in step', async () => {
   const [catalogStatus, catalog] = await request('/products?per_page=5');
   assert.equal(catalogStatus, 200);
   const product = catalog.find(row => row.variations.some(ref => ref.attributes.some(a => a.value?.includes('نام و شماره دلخواه'))));
@@ -69,18 +69,28 @@ test('A guest can transfer a personalized cart to WooCommerce checkout', async (
     assert.equal(target.pathname, '/checkout/');
     assert.ok(target.searchParams.get('session'));
 
-    const page = await fetch(target.href, { redirect: 'manual', signal: AbortSignal.timeout(25000) });
-    assert.ok([200, 302].includes(page.status));
-    let body = await page.text();
-    if (page.status === 302) {
-      const location = new URL(page.headers.get('Location'), origin);
+    let location = target;
+    const cookies = new Map();
+    let page;
+    for (let hop = 0; hop < 3; hop++) {
+      const cookie = Array.from(cookies, ([name, value]) => name + '=' + value).join('; ');
+      page = await fetch(location.href, { headers: { Cookie: cookie }, redirect: 'manual', signal: AbortSignal.timeout(25000) });
+      if (!page.headers.has('Location')) break;
+      for (const header of page.headers.getSetCookie()) {
+        const [pair] = header.split(';');
+        const equals = pair.indexOf('=');
+        cookies.set(pair.slice(0, equals), pair.slice(equals + 1));
+      }
+      location = new URL(page.headers.get('Location'), origin);
       assert.equal(location.origin, origin);
-      const cookie = page.headers.getSetCookie().map(line => line.split(';')[0]).join('; ');
-      body = await fetch(location.href, { headers: { Cookie: cookie }, signal: AbortSignal.timeout(25000) }).then(result => result.text());
+      await page.text();
     }
-    assert.ok(body.includes('billing_email'), 'Checkout form was present.');
-    assert.ok(body.includes('woocommerce-checkout-review-order-table'), 'Transferred items were present.');
-    assert.ok(body.includes('آزمون موبایل'), 'Print details transferred to checkout.');
+    assert.equal(page.status, 200);
+    assert.equal(location.pathname, '/my-account/');
+    assert.equal(location.searchParams.get('return'), 'checkout');
+    const body = await page.text();
+    assert.ok(body.includes('mv-phone'), 'Mobile sign-in form was present.');
+    assert.ok(body.includes('بازگشت به تسویه‌حساب'), 'The transferred cart is available on sign-in.');
   } finally {
     const [removedCode, removed] = await request('/cart/remove-item', { key: line.key });
     assert.equal(removedCode, 200);

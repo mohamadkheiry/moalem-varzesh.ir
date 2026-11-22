@@ -41,7 +41,8 @@ add_action('woocommerce_before_shop_loop_item_title', static function (): void {
 
 add_filter('wp_preload_resources', static function (array $resources): array {
     $resources[] = [
-        'href' => get_theme_file_uri('assets/vazirmatn.woff2'), 'as' => 'font', 'type' => 'font/woff2', 'crossorigin' => 'anonymous',
+        'href' => mv_licensed_store_font_url() ?: get_theme_file_uri('assets/vazirmatn.woff2'),
+        'as' => 'font', 'type' => 'font/woff2', 'crossorigin' => 'anonymous',
     ];
     return $resources;
 });

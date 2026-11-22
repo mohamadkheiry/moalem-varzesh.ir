@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory)]
     [string] $Runtime,
-    [string] $Cases = '14,16',
+    [string] $Cases = '06,08,09,14,16,20,24,25',
     [ValidateSet(402, 503)]
     [int] $FailureStatus = 503
 )
@@ -26,12 +26,19 @@ $orderCapture = "$capture.json"
 $email = "checkout-$tag@example.test"
 $settings = @{
     phone = $phone
+    purchasePhones = @{}
     capture = $capture
     orderCapture = $orderCapture
     email = $email
     tag = $tag
     failureStatus = $FailureStatus
     expires = [DateTimeOffset]::UtcNow.AddMinutes(12).ToUnixTimeSeconds()
+}
+foreach ($case in @('06', '08', '09', '16', '20', '24', '25')) {
+    do {
+        $candidate = '0900' + (Get-Random -Minimum 1000000 -Maximum 9999999)
+    } while ($candidate -eq $phone -or $settings.purchasePhones.Values -contains $candidate)
+    $settings.purchasePhones[$case] = $candidate
 }
 
 $testEnv = @{
@@ -54,11 +61,11 @@ try {
     node (Join-Path $PSScriptRoot 'storefront.cjs')
     $code = $LASTEXITCODE
 } finally {
+    php $wpCli "--path=$wordpress" eval-file (Join-Path $PSScriptRoot 'cleanup-browser-commerce.php')
+    $cleanup = $LASTEXITCODE
     foreach ($path in @($fixture, $loader, $capture, "$capture.failed", $orderCapture)) {
         if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path }
     }
-    php $wpCli "--path=$wordpress" eval-file (Join-Path $PSScriptRoot 'cleanup-browser-commerce.php')
-    $cleanup = $LASTEXITCODE
     foreach ($name in $previous.Keys) {
         [Environment]::SetEnvironmentVariable($name, $previous[$name], 'Process')
     }

@@ -7,6 +7,18 @@ add_action('wp_enqueue_scripts', static function (): void {
     }
 }, 21);
 
+add_action('wp', static function (): void {
+    if (!function_exists('is_product') || !is_product()) {
+        return;
+    }
+    remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_price', 10);
+    remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_meta', 40);
+}, 20);
+
+add_action('woocommerce_single_product_summary', static function (): void {
+    echo '<div class="mv-product-info">';
+}, 1);
+
 add_action('woocommerce_single_product_summary', static function (): void {
     global $product;
     if (!$product instanceof WC_Product) {
@@ -29,6 +41,9 @@ add_action('woocommerce_single_product_summary', static function (): void {
 }, 3);
 
 add_action('woocommerce_single_product_summary', static function (): void {
+    woocommerce_template_single_meta();
+    echo '</div><div class="mv-product-purchase">';
+    woocommerce_template_single_price();
     echo '<div class="mv-product-buy">';
 }, 29);
 add_action('woocommerce_single_product_summary', static function (): void {
@@ -38,6 +53,7 @@ add_action('woocommerce_single_product_summary', static function (): void {
         mv_icon('chat');
         echo '</a>';
     }
+    echo '</div>';
 }, 31);
 
 add_filter('woocommerce_product_tabs', static function (array $tabs): array {

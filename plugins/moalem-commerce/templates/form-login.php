@@ -1,6 +1,7 @@
 <?php
 defined('ABSPATH') || exit;
 $mode = mv_commerce_account_mode();
+$is_modal = mv_commerce_modal_request();
 $phone = mv_commerce_phone(mv_commerce_field('mv_phone'));
 $session_phone = WC()->session ? (string) WC()->session->get('mv_otp_phone', '') : '';
 if ($mode !== 'login' && !$phone) {
@@ -15,23 +16,26 @@ $timer_label = static fn(int $seconds): string => strtr(
     sprintf('%02d:%02d', intdiv($seconds, 60), $seconds % 60),
     array_combine(str_split('0123456789'), ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'])
 );
-$titles = ['login' => 'ورود به حساب', 'otp' => 'ورود یا عضویت با پیامک', 'verify' => 'تأیید شماره موبایل'];
+$titles = ['login' => 'ورود به حساب', 'otp' => 'ورود یا عضویت با پیامک', 'verify' => 'تأیید شماره موبایل', 'register' => 'ساخت حساب'];
 $descriptions = [
     'login' => 'با شماره موبایل و رمز عبور وارد حساب‌تان شوید.',
     'otp' => 'شماره موبایل‌تان را وارد کنید تا کد ورود را برایتان پیامک کنیم.',
+    'register' => 'شماره موبایل و رمز دلخواه‌تان را وارد کنید تا حساب شما ساخته شود.',
     'verify' => $timing ? 'کد شش‌رقمی پیامک‌شده به شمارهٔ زیر را وارد کنید.' : 'اگر کد دارید، شماره موبایل و کد شش‌رقمی را وارد کنید.',
 ];
-$actions = ['login' => 'ورود', 'otp' => 'ارسال کد ورود', 'verify' => 'تأیید و ورود'];
+$actions = ['login' => 'ورود', 'otp' => 'ارسال کد ورود', 'verify' => 'تأیید و ورود', 'register' => 'ساخت حساب و ادامه'];
 $image = 'assets/hero-boots-780.webp';
 ?>
 <div class="mv-account">
     <div class="mv-account-panel">
-        <h1><?php echo esc_html($titles[$mode]); ?></h1>
+        <?php if ($is_modal) : ?><h2 id="mv-account-title"><?php echo esc_html($titles[$mode]); ?></h2>
+        <?php else : ?><h1><?php echo esc_html($titles[$mode]); ?></h1><?php endif; ?>
         <p class="mv-account-intro" id="mv-account-intro"><?php echo esc_html($descriptions[$mode]); ?></p>
         <?php if ($mode !== 'verify') : ?>
             <nav class="mv-account-method" aria-label="روش ورود">
                 <a href="<?php echo esc_url(mv_commerce_account_url()); ?>"<?php if ($mode === 'login') echo ' aria-current="page"'; ?>>رمز عبور</a>
                 <a href="<?php echo esc_url(mv_commerce_account_url('otp')); ?>"<?php if ($mode === 'otp') echo ' aria-current="page"'; ?> aria-label="ورود یا عضویت با رمز یک‌بارمصرف">رمز یک‌بارمصرف</a>
+                <a href="<?php echo esc_url(mv_commerce_account_url('register')); ?>"<?php if ($mode === 'register') echo ' aria-current="page"'; ?>>ثبت‌نام</a>
             </nav>
         <?php endif; ?>
         <?php wc_print_notices(); ?>
@@ -60,13 +64,20 @@ $image = 'assets/hero-boots-780.webp';
             <?php endif; ?>
             <?php if ($mode !== 'otp') : ?>
                 <p class="form-row form-row-wide">
-                    <label for="mv-password"><?php echo $mode === 'login' ? 'رمز عبور' : 'رمز عبور جدید (اختیاری)'; ?></label>
+                    <label for="mv-password"><?php echo $mode === 'verify' ? 'رمز عبور (اختیاری)' : 'رمز عبور'; ?></label>
                     <span class="mv-password-field">
                         <input id="mv-password" name="mv_password" type="password" dir="ltr" maxlength="4096"
                             autocomplete="<?php echo $mode === 'login' ? 'current-password' : 'new-password'; ?>"
-                            <?php echo $mode === 'login' ? 'required' : 'minlength="8" aria-describedby="mv-password-hint"'; ?>>
+                            <?php if ($mode !== 'verify') echo 'required'; ?><?php if ($mode !== 'login') echo ' minlength="8" aria-describedby="mv-password-hint"'; ?>>
                     </span>
-                    <?php if ($mode === 'verify') : ?><small id="mv-password-hint">برای ورودهای بعدی می‌توانید یک رمز با دست‌کم ۸ نویسه انتخاب کنید.</small><?php endif; ?>
+                    <?php if ($mode === 'verify') : ?><small id="mv-password-hint">اگر بدون پیامک ثبت‌نام کرده‌اید، رمز فعلی را برای اتصال به همان حساب وارد کنید. برای حساب تازه می‌توانید رمز دلخواه تعیین کنید.</small>
+                    <?php elseif ($mode === 'register') : ?><small id="mv-password-hint">دست‌کم ۸ نویسه</small><?php endif; ?>
+                </p>
+            <?php endif; ?>
+            <?php if ($mode === 'register') : ?>
+                <p class="form-row form-row-wide">
+                    <label for="mv-password-confirmation">تکرار رمز عبور</label>
+                    <input id="mv-password-confirmation" name="mv_password_confirmation" type="password" dir="ltr" maxlength="4096" autocomplete="new-password" required>
                 </p>
             <?php endif; ?>
             <?php wp_nonce_field(mv_commerce_account_nonce(), '_mv_nonce', false); ?>
@@ -89,7 +100,7 @@ $image = 'assets/hero-boots-780.webp';
             <div class="mv-account-links"><a href="<?php echo esc_url(wc_get_checkout_url()); ?>">بازگشت به تسویه‌حساب</a></div>
         <?php endif; ?>
     </div>
-    <?php if (is_readable(get_theme_file_path($image))) : ?>
+    <?php if (!$is_modal && is_readable(get_theme_file_path($image))) : ?>
         <div class="mv-account-visual" aria-hidden="true">
             <img src="<?php echo esc_url(get_theme_file_uri($image)); ?>" width="780" height="622" alt="" loading="lazy">
         </div>

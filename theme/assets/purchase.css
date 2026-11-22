@@ -264,7 +264,7 @@
     padding: clamp(1rem, 4vw, 2.75rem);
 }
 .mv-account-intro { margin: .55rem 0 1rem; }
-.mv-account-method { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; margin: 0 0 1rem; padding: .22rem; border-radius: .74rem; background: var(--purchase-mint); }
+.mv-account-method { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .25rem; margin: 0 0 1rem; padding: .22rem; border-radius: .74rem; background: var(--purchase-mint); }
 .mv-account-method a {
     display: grid;
     place-items: center;

@@ -52,6 +52,7 @@ $limited_ip = $ip . '-limited';
 $order = null;
 $manager_orders = [];
 $otp_managers = [];
+$password_customers = [];
 $user_id = 0;
 $keys = [
     mv_commerce_key('otp', $phone), mv_commerce_key('otp', $other),
@@ -162,6 +163,38 @@ try {
     $check(!is_wp_error($account) && $account->ID === $id, 'WordPress password authentication by phone');
     $check(mv_commerce_user_for_verified_phone($phone, 'Store reset password 2747') === $id
         && wp_check_password('Store reset password 2747', get_userdata($id)->user_pass, $id), 'OTP can set a replacement password');
+
+    $register_phone = '0904' . substr($phone, 4);
+    $separate_phone = '0905' . substr($phone, 4);
+    $fixed_password = 'Store registration QA password 3415';
+    foreach ([$register_phone, $separate_phone] as $mobile) {
+        $keys[] = mv_commerce_key('register-phone', $mobile);
+        $keys[] = mv_commerce_key('password-phone', $mobile);
+    }
+    $keys[] = mv_commerce_key('register-ip', $ip);
+    $check(is_wp_error(mv_commerce_register_customer($register_phone, 'weak', $ip)), 'short registration password rejected');
+    $before = count($requests);
+    $registered = mv_commerce_register_customer($register_phone, $fixed_password, $ip);
+    $check(is_int($registered) && $registered > 0, 'password-only registration creates a customer');
+    $password_customers[] = $registered;
+    $check(count($requests) === $before && mv_commerce_find_customer($register_phone) === 0
+        && get_user_meta($registered, '_mv_unverified_mobile', true) === $register_phone, 'registration sends no SMS and leaves mobile unverified');
+    $check(is_wp_error(mv_commerce_register_customer($register_phone, 'Different QA password', $ip)),
+        'registration cannot overwrite an existing password account');
+    $password_login = mv_commerce_password_login($register_phone, $fixed_password, $ip);
+    $check($password_login instanceof WP_User && $password_login->ID === $registered, 'password login works before mobile verification');
+    $check(mv_commerce_user_for_verified_phone($register_phone, $fixed_password) === $registered
+        && mv_commerce_find_customer($register_phone) === $registered
+        && !get_user_meta($registered, '_mv_unverified_mobile', true), 'verified OTP and existing password link the original customer');
+    $check(mv_commerce_user_for_verified_phone($register_phone, '') === $registered, 'subsequent OTP-only login resolves the linked customer');
+    $unverified = mv_commerce_register_customer($separate_phone, $fixed_password, $ip);
+    $check(is_int($unverified) && $unverified > 0, 'create an unverified identity for isolation check');
+    $password_customers[] = $unverified;
+    $verified = mv_commerce_user_for_verified_phone($separate_phone, '');
+    $check(is_int($verified) && $verified > 0 && $verified !== $unverified, 'OTP alone cannot take over an unverified customer account');
+    $password_customers[] = $verified;
+    $password_login = mv_commerce_password_login($separate_phone, $fixed_password, $ip);
+    $check($password_login instanceof WP_User && $password_login->ID === $unverified, 'the isolated password identity remains accessible');
 
     $order = wc_create_order();
     if (is_wp_error($order)) {
@@ -325,6 +358,9 @@ try {
     require_once ABSPATH . 'wp-admin/includes/user.php';
     foreach ($otp_managers as $otp_manager) {
         wp_delete_user($otp_manager);
+    }
+    foreach ($password_customers as $password_customer) {
+        wp_delete_user($password_customer);
     }
     if ($user_id) {
         wp_delete_user($user_id);

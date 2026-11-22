@@ -1,6 +1,7 @@
-(() => {
-    const form = document.querySelector('[data-mv-otp-timing]');
-    if (!form) return;
+function mvSetupOtpTimer(root) {
+    const form = root.querySelector('[data-mv-otp-timing]');
+    if (!form || form.dataset.timerReady) return;
+    form.dataset.timerReady = 'true';
 
     const active = form.querySelector('[data-mv-otp-active]');
     const expired = form.querySelector('[data-mv-otp-expired]');
@@ -12,7 +13,15 @@
     const number = new Intl.NumberFormat('fa-IR', { minimumIntegerDigits: 2, useGrouping: false });
     const format = seconds => number.format(Math.floor(seconds / 60)) + ':' + number.format(seconds % 60);
 
+    const stop = () => {
+        clearInterval(interval);
+        window.removeEventListener('pageshow', update);
+    };
     const update = () => {
+        if (!form.isConnected) {
+            stop();
+            return;
+        }
         const elapsed = Math.max(0, Math.floor((Date.now() - started) / 1000));
         const validFor = Math.max(0, Number(form.dataset.validFor) - elapsed);
         const resendIn = Math.max(0, Number(form.dataset.resendIn) - elapsed);
@@ -25,9 +34,12 @@
             resendCount.hidden = resendIn === 0;
             resendCount.textContent = format(resendIn);
         }
-        if (validFor === 0 && resendIn === 0) clearInterval(interval);
+        if (validFor === 0 && resendIn === 0) stop();
     };
     const interval = setInterval(update, 1000);
-    update();
     window.addEventListener('pageshow', update);
-})();
+    update();
+}
+
+mvSetupOtpTimer(document);
+document.addEventListener('mv-account-fragment', event => mvSetupOtpTimer(event.detail));

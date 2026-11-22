@@ -37,6 +37,7 @@ function mv_icon(string $name): void {
         'telegram' => '<path d="M21 4 3 11.2l5.2 2 2.4 6.2 3-3.3 4.3 3.1L21 4ZM8.2 13.2 17 7.5"/>',
         'whatsapp' => '<path d="M20.5 11.9a8.5 8.5 0 0 1-12.2 7.6l-4.6 1 1-4.3a8.5 8.5 0 1 1 15.8-4.3Z"/><path d="M9 8.5c.3 3 2.6 5.5 5.6 6l1.1-1.3-1.8-1.1-.9.5a6 6 0 0 1-2.3-2.5l.5-.7-1-1.8Z"/>',
         'chat' => '<path d="M20.6 11.8a8.6 8.6 0 0 1-8.6 8.6 9 9 0 0 1-3.8-.9l-4.6 1 .9-4.4a8.6 8.6 0 1 1 16.1-4.3Z"/><path d="M8.8 11.8h6.4"/>',
+        'phone' => '<path d="m8 4 2.2 4.1-2.1 2.2a13 13 0 0 0 5.6 5.6l2.2-2.1L20 16v2.2c0 1-.8 1.8-1.8 1.8A14.2 14.2 0 0 1 4 5.8C4 4.8 4.8 4 5.8 4Z"/>',
     ];
     if (isset($icons[$name])) {
         echo '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $icons[$name] . '</svg>';

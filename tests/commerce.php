@@ -36,6 +36,11 @@ $manager_setting = static function () use (&$manager_phone): string {
     return $manager_phone;
 };
 add_filter('pre_option_mv_commerce_manager_phone', $manager_setting);
+$public_contact_phone = '';
+$public_contact_setting = static function () use (&$public_contact_phone): string {
+    return $public_contact_phone;
+};
+add_filter('pre_option_mv_commerce_public_contact_phone', $public_contact_setting);
 
 global $wpdb;
 $table = mv_commerce_table();
@@ -194,6 +199,25 @@ try {
         && end($requests)['body']['to'] === [$new_manager], 'new manager and buyer get independent alerts on the next order');
     mv_commerce_order_sms($second->get_id(), 'pending', 'completed', $second);
     $check(count($requests) === $before + 3, 'manager alert is idempotent on a direct completion');
+
+    $public_contact_phone = $other;
+    $contact_body = static function (): string {
+        ob_start();
+        get_template_part('template-parts/social-links');
+        return ob_get_clean();
+    };
+    $link = 'href="tel:+98' . substr($other, 1) . '"';
+    $html = $contact_body();
+    $check(str_contains($html, $link) && !str_contains($html, $new_manager), 'only the public contact number appears in the floating menu');
+    $public_contact_phone = $phone;
+    $html = $contact_body();
+    $check(!str_contains($html, $link) && str_contains($html, 'href="tel:+98' . substr($phone, 1) . '"'),
+        'floating menu immediately uses the updated public contact');
+    $check(mv_commerce_sanitize_phone_option('invalid number', 'mv_commerce_public_contact_phone', 'Invalid number') === $phone,
+        'invalid public number retains the current value');
+    $public_contact_phone = '';
+    $check(!str_contains($contact_body(), 'href="tel:') && mv_commerce_manager_phone() === $new_manager,
+        'blank public contact hides call link while retaining the SMS recipient');
 } catch (Throwable $exception) {
     $error = $exception->getMessage();
 } finally {
@@ -212,6 +236,7 @@ try {
     }
     remove_filter('pre_http_request', $mock);
     remove_filter('pre_option_mv_commerce_manager_phone', $manager_setting);
+    remove_filter('pre_option_mv_commerce_public_contact_phone', $public_contact_setting);
 }
 if ($error !== null) {
     WP_CLI::error($error);

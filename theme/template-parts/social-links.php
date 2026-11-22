@@ -1,5 +1,6 @@
 <?php
 defined('ABSPATH') || exit;
+$public_phone = function_exists('mv_commerce_public_contact_phone') ? mv_commerce_public_contact_phone() : '';
 $links = [
     ['instagram', 'اینستاگرام', 'https://www.instagram.com/moalemvarzesh_store/'],
     ['telegram', 'تلگرام', 'https://t.me/MoalemVarzesh_Store'],
@@ -24,6 +25,15 @@ $links = [
                     </a>
                 </li>
             <?php endforeach; ?>
+            <?php if ($public_phone) : ?>
+                <li class="mv-social-contact">
+                    <a href="<?php echo esc_url('tel:+98' . substr($public_phone, 1)); ?>">
+                        <span class="mv-social-icon mv-social-phone"><?php mv_icon('phone'); ?></span>
+                        <span>تماس با مدیر<bdi class="mv-social-number" dir="ltr"><?php echo esc_html($public_phone); ?></bdi></span>
+                        <?php mv_icon('arrow'); ?>
+                    </a>
+                </li>
+            <?php endif; ?>
         </ul>
     </nav>
 </details>

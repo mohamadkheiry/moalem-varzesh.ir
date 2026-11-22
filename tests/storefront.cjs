@@ -368,8 +368,18 @@ const cases = [
             assert.ok(await panel.isVisible());
             const region = await panel.boundingBox();
             assert.ok(region.x >= 0 && region.x + region.width <= width && region.y >= 0);
-            const links = await panel.getByRole('link').evaluateAll(items => items.map(link => [link.href, link.target, link.rel]));
+            const links = await panel.locator('a[target="_blank"]').evaluateAll(items => items.map(link => [link.href, link.target, link.rel]));
             assert.deepEqual(links, expected.map(href => [href, '_blank', 'noopener noreferrer']));
+            const call = panel.getByRole('link', { name: /تماس با مدیر/ });
+            const expectedPhone = process.env.MV_PUBLIC_CONTACT_PHONE;
+            if (expectedPhone || await call.count()) {
+                assert.equal(await call.count(), 1);
+                const displayedPhone = await call.locator('.mv-social-number').textContent();
+                assert.match(displayedPhone, /^09[0-9]{9}$/);
+                if (expectedPhone) assert.equal(displayedPhone, expectedPhone);
+                assert.equal(await call.getAttribute('href'), 'tel:+98' + displayedPhone.slice(1));
+                assert.equal(await call.getAttribute('target'), null);
+            }
             await panel.getByRole('link').first().press('Escape');
             assert.equal(await panel.isVisible(), false);
             assert.ok(await toggle.evaluate(el => document.activeElement === el));

@@ -993,6 +993,11 @@ const cases = [
         assert.ok(await page.locator('.mv-order-line-image img').isVisible());
         await page.setViewportSize({ width: 390, height: 844 });
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        assert.equal(await page.locator('.woocommerce-table--order-details th.product-total').evaluate(header => {
+            const label = document.createRange();
+            label.selectNodeContents(header);
+            return label.getClientRects().length;
+        }), 1);
         await page.screenshot({ path: resolve(evidence, 'customer-order-mobile.png') });
         await go(page, '/my-account/view-order/' + foreign + '/');
         assert.equal(await page.locator('.mv-order-detail').count(), 0);

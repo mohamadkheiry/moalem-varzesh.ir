@@ -6,11 +6,19 @@ $session_phone = WC()->session ? (string) WC()->session->get('mv_otp_phone', '')
 if ($mode !== 'login' && !$phone) {
     $phone = $session_phone;
 }
+$timing = $mode === 'verify' ? mv_commerce_account_otp_timing($phone) : null;
+$now = time();
+$valid_for = max(0, ($timing['expires'] ?? 0) - $now);
+$resend_in = max(0, ($timing['resend'] ?? 0) - $now);
+$timer_label = static fn(int $seconds): string => strtr(
+    sprintf('%02d:%02d', intdiv($seconds, 60), $seconds % 60),
+    array_combine(str_split('0123456789'), ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'])
+);
 $titles = ['login' => 'ورود به حساب', 'otp' => 'ورود یا عضویت با پیامک', 'verify' => 'تأیید شماره موبایل'];
 $descriptions = [
     'login' => 'با شماره موبایل و رمز عبور وارد حساب‌تان شوید.',
     'otp' => 'شماره موبایل‌تان را وارد کنید تا کد ورود را برایتان پیامک کنیم.',
-    'verify' => $session_phone ? 'کد شش‌رقمی ارسال‌شده به شمارهٔ زیر را وارد کنید. این کد ۵ دقیقه اعتبار دارد.' : 'اگر کد دارید، شماره موبایل و کد شش‌رقمی را وارد کنید.',
+    'verify' => $timing ? 'کد شش‌رقمی پیامک‌شده به شمارهٔ زیر را وارد کنید.' : 'اگر کد دارید، شماره موبایل و کد شش‌رقمی را وارد کنید.',
 ];
 $actions = ['login' => 'ورود', 'otp' => 'ارسال کد ورود', 'verify' => 'تأیید و ورود'];
 $image = 'assets/hero-boots-780.webp';
@@ -26,7 +34,8 @@ $image = 'assets/hero-boots-780.webp';
             </nav>
         <?php endif; ?>
         <?php wc_print_notices(); ?>
-        <form class="woocommerce-form woocommerce-form-login login" method="post" action="<?php echo esc_url(mv_commerce_account_url($mode)); ?>" aria-describedby="mv-account-intro">
+        <form class="woocommerce-form woocommerce-form-login login" method="post" action="<?php echo esc_url(mv_commerce_account_url($mode)); ?>" aria-describedby="mv-account-intro"
+            <?php if ($timing) : ?>data-mv-otp-timing data-valid-for="<?php echo esc_attr($valid_for); ?>" data-resend-in="<?php echo esc_attr($resend_in); ?>"<?php endif; ?>>
             <p class="form-row form-row-wide">
                 <label for="mv-phone">شماره موبایل</label>
                 <input id="mv-phone" name="mv_phone" type="tel" inputmode="tel" autocomplete="<?php echo $mode === 'login' ? 'username' : 'tel'; ?>"
@@ -38,6 +47,15 @@ $image = 'assets/hero-boots-780.webp';
                     <label for="mv-code">کد یک‌بارمصرف</label>
                     <input id="mv-code" name="mv_code" type="text" inputmode="numeric" autocomplete="one-time-code" dir="ltr" maxlength="6" required>
                 </p>
+                <?php if ($timing) : ?>
+                    <p class="mv-otp-validity" data-mv-otp-active <?php if (!$valid_for) echo 'hidden'; ?>>
+                        <span>زمان باقی‌مانده برای ورود کد</span>
+                        <bdi dir="ltr" role="timer" data-mv-otp-count><?php echo esc_html($timer_label($valid_for)); ?></bdi>
+                    </p>
+                    <p class="mv-otp-validity mv-otp-expired" data-mv-otp-expired role="status" <?php if ($valid_for) echo 'hidden'; ?>>
+                        کد قبلی دیگر معتبر نیست. برای ادامه یک کد جدید بگیرید.
+                    </p>
+                <?php endif; ?>
             <?php endif; ?>
             <?php if ($mode !== 'otp') : ?>
                 <p class="form-row form-row-wide">
@@ -52,11 +70,17 @@ $image = 'assets/hero-boots-780.webp';
             <?php endif; ?>
             <?php wp_nonce_field(mv_commerce_account_nonce(), '_mv_nonce', false); ?>
             <input type="hidden" name="mv_action" value="<?php echo esc_attr($mode); ?>">
-            <button class="button mv-account-submit" type="submit"><?php echo esc_html($actions[$mode]); ?></button>
+            <button class="button mv-account-submit" type="submit" <?php if ($timing && !$valid_for) echo 'disabled'; ?>><?php echo esc_html($actions[$mode]); ?></button>
+            <?php if ($timing) : ?>
+                <button class="mv-otp-resend" type="submit" name="mv_resend" value="1" formnovalidate>
+                    ارسال دوبارهٔ کد
+                    <?php if ($resend_in) : ?><bdi dir="ltr" data-mv-otp-resend-count><?php echo esc_html($timer_label($resend_in)); ?></bdi><?php endif; ?>
+                </button>
+            <?php endif; ?>
         </form>
         <?php if ($mode === 'verify') : ?>
             <div class="mv-account-links">
-                <a href="<?php echo esc_url(mv_commerce_account_url('otp')); ?>">درخواست کد جدید یا تغییر شماره</a>
+                <a href="<?php echo esc_url(mv_commerce_account_url('otp')); ?>"><?php echo $timing ? 'تغییر شماره' : 'درخواست کد یا تغییر شماره'; ?></a>
                 <a href="<?php echo esc_url(mv_commerce_account_url()); ?>">ورود با رمز عبور</a>
             </div>
         <?php endif; ?>

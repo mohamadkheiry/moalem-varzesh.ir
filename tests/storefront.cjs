@@ -1,6 +1,6 @@
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
-const { existsSync, mkdirSync, readFileSync } = require('node:fs');
+const { existsSync, mkdirSync, readFileSync, statSync } = require('node:fs');
 const { resolve } = require('node:path');
 const source = require('../catalog/products.json');
 const variants = require('../catalog/variations.json');
@@ -269,7 +269,8 @@ const cases = [
         await go(page, '/my-account/');
         await page.screenshot({ path: resolve(evidence, 'storefront-account.png') });
     }],
-    ['14', 'عضویت با کد پیامک شبیه‌سازی‌شده و ورود دوباره با رمز عبور', async page => {
+    ['14', 'بازگشت به کد پیامکی فعال، شمارش معکوس و ورود دوباره با رمز عبور', async page => {
+        await page.clock.install();
         const fixture = await loadSmsFixture(page, '/my-account/?mode=otp');
         await page.locator('#mv-phone').fill(fixture.phone);
         await page.getByRole('button', { name: 'ارسال کد ورود' }).click();
@@ -278,6 +279,40 @@ const cases = [
         const code = readFileSync(fixture.capture, 'utf8').trim();
         assert.match(code, /^[0-9]{6}$/);
         assert.equal(await page.locator('#mv-phone').inputValue(), fixture.phone);
+        const timer = page.getByRole('timer');
+        const timing = page.locator('[data-mv-otp-timing]');
+        const originalRemaining = Number(await timing.getAttribute('data-valid-for'));
+        assert.ok(originalRemaining > 0 && originalRemaining <= 300);
+        const startingCount = await timer.innerText();
+        assert.match(startingCount, /^[۰-۹]{2}:[۰-۹]{2}$/);
+        await page.clock.fastForward(2000);
+        assert.notEqual(await timer.innerText(), startingCount);
+        const sentAt = statSync(fixture.capture).mtimeMs;
+        await page.goBack({ waitUntil: 'domcontentloaded' });
+        await page.waitForURL(/mode=otp/);
+        const persianPhone = fixture.phone.replace(/\d/g, digit => '۰۱۲۳۴۵۶۷۸۹'[digit]);
+        await page.locator('#mv-phone').fill(persianPhone);
+        await page.getByRole('button', { name: 'ارسال کد ورود' }).click();
+        await page.waitForURL(/mode=verify/, { timeout: 7000 });
+        assert.equal(statSync(fixture.capture).mtimeMs, sentAt);
+        assert.equal(readFileSync(fixture.capture, 'utf8').trim(), code);
+        const resumedRemaining = Number(await timing.getAttribute('data-valid-for'));
+        assert.ok(resumedRemaining > 0 && resumedRemaining <= originalRemaining);
+        assert.ok(await page.locator('#mv-code').isVisible());
+        assert.ok(await timer.isVisible());
+        const resend = page.getByRole('button', { name: /ارسال دوبارهٔ کد/ });
+        assert.ok(await resend.isDisabled());
+        await page.setViewportSize({ width: 390, height: 1000 });
+        await page.screenshot({ path: resolve(evidence, 'account-otp-resumed.png') });
+        await page.clock.fastForward(61000);
+        assert.ok(await resend.isEnabled());
+        assert.ok(await page.getByRole('button', { name: 'تأیید و ورود' }).isEnabled());
+        await page.clock.fastForward(300000);
+        assert.ok(await page.getByText('کد قبلی دیگر معتبر نیست.', { exact: false }).isVisible());
+        assert.ok(await page.getByRole('button', { name: 'تأیید و ورود' }).isDisabled());
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        assert.ok(await timer.isVisible());
+        assert.ok(await page.getByRole('button', { name: 'تأیید و ورود' }).isEnabled());
         const wrong = code === '123456' ? '123455' : '123456';
         await page.locator('#mv-code').fill(wrong);
         await page.getByRole('button', { name: 'تأیید و ورود' }).click();

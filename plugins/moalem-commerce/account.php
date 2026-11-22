@@ -154,6 +154,26 @@ function mv_commerce_account_redirect(): void {
     exit;
 }
 
+function mv_commerce_account_otp_timing(string $phone): ?array {
+    $session = WC()->session;
+    if (!$phone || !$session || $phone !== $session->get('mv_otp_phone', '')) {
+        return null;
+    }
+    $row = mv_commerce_read(mv_commerce_key('otp', $phone));
+    $data = json_decode($row['payload'] ?? '{}', true);
+    $usable = !empty($data['digest']) && (int) ($data['attempts'] ?? 5) < 5;
+    return [
+        'expires' => $usable ? (int) $row['expires'] : 0,
+        'resend' => (int) ($data['resend'] ?? 0),
+    ];
+}
+
+add_action('wp_enqueue_scripts', static function (): void {
+    if (function_exists('is_account_page') && is_account_page() && !is_user_logged_in() && mv_commerce_account_mode() === 'verify') {
+        wp_enqueue_script('mv-account-otp', plugins_url('assets/account-otp.js', __FILE__), [], '1.0.0', ['in_footer' => true, 'strategy' => 'defer']);
+    }
+});
+
 add_action('template_redirect', static function (): void {
     if (!function_exists('is_account_page') || !is_account_page() || is_user_logged_in()) {
         return;
@@ -186,7 +206,20 @@ add_action('template_redirect', static function (): void {
         }
         mv_commerce_account_redirect();
     }
-    if ($action === 'otp') {
+    $resend = $action === 'verify' && mv_commerce_field('mv_resend') === '1';
+    if ($action === 'otp' || $resend) {
+        $timing = mv_commerce_account_otp_timing($phone);
+        $now = time();
+        if ($action === 'otp' && ($timing['expires'] ?? 0) > $now) {
+            wp_safe_redirect(mv_commerce_account_url('verify'), 303);
+            exit;
+        }
+        if ($resend && (!$timing || $timing['resend'] > $now)) {
+            mv_commerce_account_error($timing
+                ? 'برای ارسال دوباره، تا پایان شمارش معکوس صبر کنید.'
+                : 'برای درخواست کد، شماره موبایل را دوباره وارد کنید.');
+            return;
+        }
         if (random_int(1, 30) === 1) {
             mv_commerce_prune();
         }

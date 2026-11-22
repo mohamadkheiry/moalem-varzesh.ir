@@ -286,6 +286,41 @@
 .mv-purchase .woocommerce .mv-account .form-row input { width: 100%; }
 .mv-purchase .woocommerce .mv-account .form-row input[readonly] { background: var(--purchase-mint); }
 .mv-account .form-row small { display: block; margin-block-start: .3rem; color: var(--muted); line-height: 1.5; }
+.mv-account .mv-otp-validity {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .2rem .65rem;
+    margin: -.2rem 0 .85rem;
+    padding: .4rem .65rem;
+    border-radius: .5rem;
+    background: var(--purchase-mint);
+    color: var(--purchase-deep);
+    font-size: .82rem;
+}
+.mv-account .mv-otp-validity[hidden] { display: none; }
+.mv-account .mv-otp-expired { background: #f9efec; color: #852f31; }
+.mv-account :is(.mv-otp-validity, .mv-otp-resend) bdi { font-variant-numeric: tabular-nums; font-weight: 770; }
+.mv-account .mv-otp-resend {
+    display: inline-flex;
+    gap: .35rem;
+    align-items: center;
+    min-height: 2.75rem;
+    margin-block-start: .35rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--purchase-forest);
+    font: inherit;
+    font-size: .85rem;
+    font-weight: 720;
+    text-decoration: underline;
+    text-underline-offset: .2em;
+    cursor: pointer;
+}
+.mv-account .mv-otp-resend:disabled { color: var(--muted); cursor: default; text-decoration: none; }
+.mv-purchase .woocommerce .mv-account .mv-account-submit:disabled { opacity: .55; cursor: default; }
 .mv-password-field { display: block; position: relative; }
 .mv-purchase .woocommerce .mv-password-field:has(.show-password-input) input { padding-inline-end: 4.2rem; }
 .mv-purchase .woocommerce .mv-password-field .show-password-input {

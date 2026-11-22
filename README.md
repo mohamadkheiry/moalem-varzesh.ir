@@ -140,6 +140,7 @@ node tests/editorial-http.cjs runtime/editorial-audit.json
 
 ~~~powershell
 wp --path=$wpPath eval-file tests/catalog-audit.php
+wp --path=$wpPath eval-file tests/product-specifications.php
 wp --path=$wpPath eval-file tests/commerce.php
 npm ci
 npx playwright install chromium

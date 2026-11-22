@@ -220,6 +220,8 @@ if (wp_get_environment_type() === 'local') {
     add_filter('pre_wp_mail', '__return_true');
 }
 
+require_once __DIR__ . '/product-options.php';
+require_once __DIR__ . '/product-description-tables.php';
 require_once __DIR__ . '/print-options.php';
 require_once __DIR__ . '/product-page.php';
 require_once __DIR__ . '/editorial.php';

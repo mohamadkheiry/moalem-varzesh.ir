@@ -1,11 +1,9 @@
 <?php
 defined('ABSPATH') || exit;
 
-const MV_CUSTOM_PRINT = 'نام و شماره دلخواه';
-
 function mv_is_custom_print(array $values): bool {
     foreach ($values as $value) {
-        if (str_contains(str_replace('شمارهٔ', 'شماره', (string) $value), MV_CUSTOM_PRINT)) {
+        if (is_scalar($value) && mv_option_custom_print((string) $value)) {
             return true;
         }
     }
@@ -31,19 +29,16 @@ add_action('woocommerce_before_add_to_cart_button', static function (): void {
     if (!$product || !$product->is_type('variable')) {
         return;
     }
-    $has_custom_print = false;
+    $custom_options = [];
     foreach ($product->get_variation_attributes() as $options) {
-        if (mv_is_custom_print($options)) {
-            $has_custom_print = true;
-            break;
-        }
+        $custom_options = array_merge($custom_options, array_filter($options, 'mv_option_custom_print'));
     }
-    if (!$has_custom_print) {
+    if (!$custom_options) {
         return;
     }
     wp_enqueue_script('mv-print-options', get_theme_file_uri('assets/print-options.js'), [], wp_get_theme()->get('Version'), true);
     ?>
-    <fieldset class="mv-print-fields" data-needle="<?php echo esc_attr(MV_CUSTOM_PRINT); ?>" hidden>
+    <fieldset class="mv-print-fields" data-mv-print-options="<?php echo esc_attr(wp_json_encode(array_values(array_unique($custom_options)))); ?>" hidden>
         <legend>نام و شمارهٔ روی لباس</legend>
         <label for="mv-print-name">نام چاپی</label>
         <input id="mv-print-name" name="mv_print_name" type="text" class="input-text" maxlength="30" disabled>

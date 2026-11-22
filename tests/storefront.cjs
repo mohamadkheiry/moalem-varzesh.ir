@@ -1058,6 +1058,52 @@ const cases = [
         assert.equal(await page.locator('body.mv-primary').count(), 1);
         assert.ok(await page.locator('.woocommerce-checkout-review-order-table').innerText().then(text => text.includes(socks.name)));
     }],
+    ['30', 'مشخصات خوانا، سایز صفر، عنوان گزینه‌ها و چاپ سفارشی در هر دو طرح', async page => {
+        await go(page, pathOf(messi));
+        const tab = page.locator('li.additional_information_tab a');
+        const specs = page.locator('#tab-additional_information');
+        await tab.click();
+        assert.equal(await specs.locator('table.shop_attributes').count(), 0);
+        const sizes = specs.locator('.mv-spec-row').filter({ hasText: 'سایزها' });
+        assert.deepEqual(await sizes.locator('bdi').allTextContents(),
+            ['سایز ۰', 'سایز ۱', 'سایز ۲', 'سایز ۳ (S)', 'سایز ۴ (M)', 'سایز ۵ (XL)', 'سایز ۶ (2XL)']);
+        assert.deepEqual(await specs.locator('.mv-spec-group strong').allTextContents(), ['بدون چاپ', 'چاپ نام و شمارهٔ دلخواه']);
+        assert.ok((await specs.locator('.mv-spec-group').last().innerText()).includes('سایز ۶ (2XL)'));
+        await specs.screenshot({ path: resolve(evidence, 'product-specifications-desktop.png') });
+        assert.equal(await specs.getByRole('link', { name: 'انتخاب گزینهٔ خرید' }).getAttribute('href'), '#mv-product-options');
+        const choices = page.locator('form.variations_form .variations select').first();
+        assert.equal(await choices.locator('option[value="0"]').innerText(), 'سایز ۰');
+        await choices.selectOption('0');
+        await page.waitForFunction(() => Number(document.querySelector('input[name=variation_id]').value) > 0
+            && !document.querySelector('.single_add_to_cart_button').classList.contains('disabled'));
+        await go(page, pathOf(messi) + '?mv_design=secondary');
+        await page.setViewportSize({ width: 390, height: 844 });
+        await tab.click();
+        assert.ok(await page.locator('body.mv-secondary').count());
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        await specs.evaluate(panel => panel.scrollIntoView({ block: 'start', behavior: 'instant' }));
+        await specs.screenshot({ path: resolve(evidence, 'product-specifications-mobile.png') });
+        for (const [id, label] of [[12196, 'رنگ'], [11889, 'رنگ و مقاومت'], [11476, 'تعداد در بسته'], [11397, 'سایز و رنگ']]) {
+            await go(page, pathOf(source.find(row => row.id === id)));
+            assert.equal(await page.locator('form.variations_form .variations label').first().innerText(), label);
+        }
+        await go(page, pathOf(source.find(row => row.id === 11342)));
+        const description = page.locator('#tab-description');
+        assert.ok(await description.locator('.mv-specs').isVisible());
+        assert.equal(await description.locator('table').count(), 0);
+        assert.ok((await description.locator('.mv-specs').innerText()).includes('فلامنت'));
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        const alias = await choices.locator('option').evaluateAll(options =>
+            options.find(option => option.value.includes('اسم وشماره'))?.value);
+        assert.ok(alias, 'Custom print alias is present in the actual imported product');
+        await choices.selectOption(alias);
+        assert.ok(await page.locator('#mv-print-name').isVisible());
+        assert.equal(await page.locator('#mv-print-number').getAttribute('required'), '');
+        const unprinted = await choices.locator('option').evaluateAll(options =>
+            options.find(option => option.value.includes('بدون چاپ'))?.value);
+        await choices.selectOption(unprinted);
+        assert.ok(await page.locator('#mv-print-name').isHidden());
+    }],
 ];
 
 (async () => {

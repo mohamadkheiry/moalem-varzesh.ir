@@ -137,7 +137,13 @@ const casesAtBoundaries = [
   ['یکسان‌سازی عدد عربی', () => assert.equal(latinDigits('٠١٢٣٤٥٦٧٨٩'), '0123456789')],
   ['جست‌وجوی لاتین بدون حساسیت به حروف بزرگ', () => assert.equal(normalize(' NIKE '), 'nike')],
   ['نیم‌فاصله در جست‌وجو', () => assert.equal(normalize('نیم‌ساق'), 'نیم ساق')],
-  ['نام چاپی با فاصله', () => assert.deepEqual(normalizePrint({ name: '  علی  ', number: '  ۹  ' }), { name: 'علی', number: '9' })],
+  ['نام چاپی با فاصله و املای گزینه‌های چاپ', () => {
+    assert.deepEqual(normalizePrint({ name: '  علی  ', number: '  ۹  ' }), { name: 'علی', number: '9' });
+    assert.ok(needsPrint([{ name: 'سایز', value: 'سایز 2XL با اسم وشماره دلخواه' }]));
+    assert.ok(needsPrint([{ name: 'سایز', value: 'سایز ۴ با نام‌و‌شمارهٔ دلخواه' }]));
+    assert.ok(needsPrint([{ name: 'سایز', value: encodeURIComponent('سایز-۲-با-اسم-وشماره-دلخواه') }]));
+    assert.equal(needsPrint([{ name: 'سایز', value: 'سایز ۴ بدون چاپ' }]), false);
+  }],
   ['شمارهٔ چاپی صفر', () => assert.equal(normalizePrint({ name: 'الف', number: '۰' }).number, '0')],
   ['شمارهٔ چاپی دو رقمی', () => assert.equal(normalizePrint({ name: 'الف', number: '۹۹' }).number, '99')],
   ['شمارهٔ چاپی سه رقمی', () => assert.equal(normalizePrint({ name: 'الف', number: '۱۰۰' }), null)],

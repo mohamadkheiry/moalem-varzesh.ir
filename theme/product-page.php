@@ -42,7 +42,7 @@ add_action('woocommerce_single_product_summary', static function (): void {
 
 add_action('woocommerce_single_product_summary', static function (): void {
     woocommerce_template_single_meta();
-    echo '</div><div class="mv-product-purchase">';
+    echo '</div><div class="mv-product-purchase" id="mv-product-options">';
     woocommerce_template_single_price();
     echo '<div class="mv-product-buy">';
 }, 29);

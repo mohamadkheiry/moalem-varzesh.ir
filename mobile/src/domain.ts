@@ -178,7 +178,11 @@ export function variantFor(product: Product, choices: Selections): VariantRef | 
 }
 
 export function needsPrint(options: Option[]): boolean {
-  return options.some(option => normalize(option.value ?? '').includes('نام و شماره دلخواه'));
+  return options.some(option => {
+    let value = option.value ?? '';
+    try { value = decodeURIComponent(value); } catch { /* Literal % in an option is valid. */ }
+    return /(?:اسم|نام)[\s-]*و[\s-]*شماره[\s-]*دلخواه/u.test(normalize(value));
+  });
 }
 
 export function normalizePrint(input: PrintDetails): PrintDetails | null {

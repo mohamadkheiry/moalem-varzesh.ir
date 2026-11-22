@@ -150,3 +150,4 @@ if (wp_get_environment_type() === 'local') {
 }
 
 require_once __DIR__ . '/print-options.php';
+require_once __DIR__ . '/mobile-store.php';

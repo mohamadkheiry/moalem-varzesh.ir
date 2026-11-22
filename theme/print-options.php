@@ -12,13 +12,18 @@ function mv_is_custom_print(array $values): bool {
     return false;
 }
 
-function mv_print_fields(): array {
-    $field = static function (string $key): string {
-        return isset($_POST[$key]) && is_string($_POST[$key]) ? sanitize_text_field(wp_unslash($_POST[$key])) : '';
+function mv_print_fields(?array $input = null): array {
+    $input ??= wp_unslash($_POST);
+    $field = static function (string $key) use ($input): string {
+        return isset($input[$key]) && is_string($input[$key]) ? sanitize_text_field($input[$key]) : '';
     };
     $digits = ['۰'=>'0','۱'=>'1','۲'=>'2','۳'=>'3','۴'=>'4','۵'=>'5','۶'=>'6','۷'=>'7','۸'=>'8','۹'=>'9',
         '٠'=>'0','١'=>'1','٢'=>'2','٣'=>'3','٤'=>'4','٥'=>'5','٦'=>'6','٧'=>'7','٨'=>'8','٩'=>'9'];
     return ['name' => $field('mv_print_name'), 'number' => strtr($field('mv_print_number'), $digits)];
+}
+
+function mv_valid_print(array $fields): bool {
+    return $fields['name'] !== '' && mb_strlen($fields['name']) <= 30 && preg_match('/^\d{1,2}$/D', $fields['number']);
 }
 
 add_action('woocommerce_before_add_to_cart_button', static function (): void {
@@ -48,22 +53,24 @@ add_action('woocommerce_before_add_to_cart_button', static function (): void {
     <?php
 });
 
-add_filter('woocommerce_add_to_cart_validation', static function (bool $valid, int $product_id, $quantity, int $variation_id = 0): bool {
+add_filter('woocommerce_add_to_cart_validation', static function (
+    bool $valid, int $product_id, $quantity, int $variation_id = 0, array $attributes = [], array $cart_data = []
+): bool {
     $variation = $variation_id ? wc_get_product($variation_id) : null;
     if (!$valid || !$variation || !mv_is_custom_print($variation->get_attributes())) {
         return $valid;
     }
-    $fields = mv_print_fields();
-    if ($fields['name'] === '' || mb_strlen($fields['name']) > 30 || !preg_match('/^\d{1,2}$/D', $fields['number'])) {
+    $fields = $cart_data['mv_print'] ?? mv_print_fields();
+    if (!mv_valid_print($fields)) {
         wc_add_notice('برای چاپ سفارشی، نام و شمارهٔ یک یا دو رقمی را وارد کنید.', 'error');
         return false;
     }
     return true;
-}, 10, 4);
+}, 10, 6);
 
 add_filter('woocommerce_add_cart_item_data', static function (array $data, int $product_id, int $variation_id): array {
     $variation = $variation_id ? wc_get_product($variation_id) : null;
-    if ($variation && mv_is_custom_print($variation->get_attributes())) {
+    if ($variation && !isset($data['mv_print']) && mv_is_custom_print($variation->get_attributes())) {
         $data['mv_print'] = mv_print_fields();
     }
     return $data;

@@ -1,7 +1,7 @@
 /*
 Theme Name: Moalem Varzesh
 Description: قالب فارسی سبک فروشگاه معلم ورزش برای ووکامرس
-Version: 1.4.0
+Version: 1.5.0
 Requires at least: 7.0
 Requires PHP: 8.1
 Text Domain: moalem-varzesh
@@ -745,10 +745,6 @@ button, input, select, textarea { font: inherit; }
 }
 .woocommerce div.product .woocommerce-tabs .panel > h2:first-child { font-size: 1.3rem; }
 
-.woocommerce-cart .main-content > .article,
-.woocommerce-checkout .main-content > .article,
-.woocommerce-account .main-content > .article { max-width: none; }
-
 .woocommerce table.shop_table {
     border: 1px solid var(--line);
     border-radius: .8rem;
@@ -781,10 +777,7 @@ button, input, select, textarea { font: inherit; }
 .woocommerce table.shop_table .actions .coupon input.input-text { width: 8.5rem; }
 
 .woocommerce-cart .woocommerce-notices-wrapper:empty { display: none; }
-.woocommerce-cart .wc-proceed-to-checkout { padding: 0; }
 .woocommerce-cart .wc-proceed-to-checkout a.checkout-button { width: 100%; margin: 0; }
-.woocommerce-cart .cart_totals h2 { margin-block-end: .75rem; font-size: 1.25rem; }
-.woocommerce-checkout #payment { background: var(--soft); }
 .woocommerce-checkout #payment div.payment_box { background: var(--white); color: var(--ink); }
 .woocommerce-checkout #payment div.payment_box::before { border-bottom-color: var(--white); }
 .woocommerce-account .woocommerce-MyAccount-navigation ul { display: grid; gap: .3rem; padding: 0; list-style: none; }
@@ -900,20 +893,6 @@ button, input, select, textarea { font: inherit; }
     }
     .woocommerce div.product > :not(.images, .summary, .onsale) { grid-column: 1 / -1; }
 
-    .woocommerce-cart .main-content .article > .woocommerce {
-        display: grid;
-        align-items: start;
-        grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr);
-        gap: .9rem 1.5rem;
-    }
-    .woocommerce-cart .main-content .article > .woocommerce > :not(.woocommerce-cart-form, .cart-collaterals) {
-        grid-column: 1 / -1;
-    }
-    .woocommerce-cart .cart-collaterals .cart_totals {
-        float: none;
-        width: 100%;
-    }
-    .woocommerce-cart .cart-collaterals .cart_totals table { margin-bottom: .75rem; }
 }
 
 @media (max-width: 47.99rem) {
@@ -926,23 +905,6 @@ button, input, select, textarea { font: inherit; }
     .mv-shop-cats a { flex: none; }
     .woocommerce .woocommerce-ordering select { max-width: 12.2rem; }
 
-    .woocommerce-cart table.shop_table_responsive tr.cart_item {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-    }
-    .woocommerce-cart table.shop_table_responsive tr.cart_item td { grid-column: 1 / -1; }
-    .woocommerce-cart table.shop_table_responsive tr.cart_item td.product-thumbnail {
-        display: flex;
-        grid-area: 1 / 1;
-        align-items: center;
-        border-block-start: 0;
-    }
-    .woocommerce-cart table.shop_table_responsive tr.cart_item td.product-thumbnail::before { display: none; }
-    .woocommerce-cart table.shop_table_responsive tr.cart_item td.product-remove {
-        grid-area: 1 / 2;
-        align-content: center;
-        border-block-start: 0;
-    }
 }
 
 @media (max-width: 23.5rem) {
@@ -952,32 +914,6 @@ button, input, select, textarea { font: inherit; }
     .category-tile > svg { display: none; }
     .woocommerce ul.products li.product .price { font-size: .77rem; }
 }
-
-.woocommerce-account:not(.logged-in) .main-content > .article {
-    max-width: 30rem;
-    margin-inline: auto;
-}
-.mv-account {
-    width: min(100%, 30rem);
-    margin-block: 1rem 2rem;
-    padding: clamp(1rem, 4vw, 2rem);
-    border: 1px solid var(--line);
-    border-radius: 1.15rem;
-    background: var(--white);
-}
-.woocommerce .mv-account form.login { margin: 0 0 1.2rem; padding: 0; border: 0; }
-.woocommerce .mv-account form .form-row { padding: 0; margin-block-end: .85rem; }
-.woocommerce .mv-account form .form-row :is(input[type="tel"], input[type="text"], input[type="password"]) {
-    width: 100%;
-    min-height: 3rem;
-    padding: .55rem .75rem;
-    border: 1px solid var(--line-strong);
-    border-radius: .55rem;
-    font-size: 1rem;
-}
-.woocommerce .mv-account button.button { width: 100%; min-height: 3rem; background: var(--lime); }
-.woocommerce .mv-account button.button:hover { background: var(--lime-hover); }
-.mv-account-alt { display: inline-flex; min-height: 2.75rem; align-items: center; margin-inline-end: .75rem; color: var(--green); }
 
 .mv-social {
     position: fixed;

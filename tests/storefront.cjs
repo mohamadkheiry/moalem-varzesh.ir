@@ -289,11 +289,16 @@ const cases = [
         await page.waitForURL('**/my-account/');
         assert.ok(await page.locator('.woocommerce-MyAccount-navigation').isVisible());
         await page.context().clearCookies();
-        await go(page, '/my-account/');
+        await putSimpleInCart(page);
+        await page.locator('a.checkout-button').click();
+        await page.waitForURL('**/checkout/');
+        await page.getByRole('link', { name: 'ورود با شماره موبایل', exact: true }).click();
         await page.locator('#mv-phone').fill(fixture.phone);
         await page.locator('#mv-password').fill(password);
         await page.getByRole('button', { name: 'ورود', exact: true }).click();
-        await page.locator('.woocommerce-MyAccount-navigation').waitFor();
+        await page.waitForURL('**/checkout/');
+        assert.ok(await page.locator('.woocommerce-checkout-review-order-table').innerText().then(text => text.includes(socks.name)));
+        assert.equal(await page.locator('.mv-checkout-login').count(), 0);
     }],
     ['15', 'رسانه‌های شفاف در کارت‌ها و نگاره‌های صفحهٔ کالا', async page => {
         await go(page, '/');
@@ -325,6 +330,8 @@ const cases = [
         if (await terms.isVisible()) await terms.check();
         await page.locator('#place_order').click();
         await page.waitForURL(/order-received\/\d+/);
+        assert.equal(await page.locator('main h1').innerText(), 'نتیجهٔ سفارش');
+        assert.ok(await page.locator('.woocommerce-thankyou-order-received').isVisible());
         const orderId = new URL(page.url()).pathname.match(/order-received\/(\d+)/)[1];
         assert.ok(existsSync(fixture.orderCapture));
         const message = JSON.parse(readFileSync(fixture.orderCapture, 'utf8'));
@@ -423,6 +430,70 @@ const cases = [
         await go(page, new URL(product, base).pathname);
         assert.ok(await page.locator('.mv-related-guides a').count() >= 1);
         assert.ok((await page.locator('meta[name=description]').getAttribute('content')).length > 25);
+    }],
+    ['20', 'چیدمان خرید و ورود، گام‌های خرید و کنترل تعداد و رمز عبور', async page => {
+        const fits = async () => assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        await go(page, '/cart/');
+        assert.ok(await page.getByRole('heading', { name: 'سبد خریدتان خالی است' }).isVisible());
+        assert.ok(await page.getByRole('link', { name: 'رفتن به فروشگاه', exact: true }).isVisible());
+        await putSimpleInCart(page);
+        const steps = page.getByRole('navigation', { name: 'مراحل خرید' });
+        assert.equal(await steps.locator('[aria-current=step]').innerText().then(x => x.replace(/^۱\s*/, '')), 'سبد خرید');
+        const quantity = page.locator('.cart_item input.qty');
+        await page.getByRole('button', { name: /افزایش تعداد/ }).click();
+        assert.equal(await quantity.inputValue(), '2');
+        await page.locator('button[name=update_cart]').click();
+        await page.locator('.woocommerce-message').waitFor();
+        await page.getByRole('button', { name: /کاهش تعداد/ }).click();
+        assert.equal(await quantity.inputValue(), '1');
+        await page.locator('button[name=update_cart]').click();
+        await page.waitForFunction(() => document.querySelector('button[name=update_cart]').disabled);
+        for (const width of [320, 768, 1440]) {
+            await page.setViewportSize({ width, height: 1000 });
+            await go(page, '/cart/');
+            await fits();
+            assert.ok(await page.locator('.cart_item .product-thumbnail img').isVisible());
+            assert.ok(await page.locator('.cart_totals a.checkout-button').isVisible());
+            if (width !== 768) await page.screenshot({ path: resolve(evidence, 'purchase-cart-' + width + '.png') });
+            await page.locator('a.checkout-button').click();
+            await page.waitForURL('**/checkout/');
+            await fits();
+            assert.equal(await steps.locator('[aria-current=step]').innerText().then(x => x.replace(/^۲\s*/, '')), 'تسویه‌حساب');
+            assert.ok(await page.locator('#customer_details').isVisible());
+            assert.ok(await page.locator('.mv-checkout-review .mv-review-item-image img').isVisible());
+            assert.ok(await page.locator('#place_order').isVisible());
+            if (width !== 768) await page.screenshot({ path: resolve(evidence, 'purchase-checkout-' + width + '.png') });
+            if (width === 320) {
+                const coupon = page.getByRole('button', { name: 'وارد کردن کد تخفیف' });
+                await coupon.click();
+                await page.locator('.woocommerce-form-coupon #coupon_code').waitFor();
+                await page.locator('.showcoupon[aria-expanded="true"]').waitFor();
+            }
+            await page.getByRole('link', { name: 'ورود با شماره موبایل', exact: true }).click();
+            await page.waitForURL('**/my-account/?return=checkout');
+            await fits();
+            assert.equal(await page.locator('main h1').count(), 1);
+            assert.equal(await page.getByRole('link', { name: 'بازگشت به تسویه‌حساب' }).getAttribute('href'), base + '/checkout/');
+            const password = page.locator('#mv-password');
+            await password.fill('Sample password');
+            const toggle = page.locator('.mv-password-field .show-password-input');
+            assert.equal(await toggle.count(), 1);
+            const label = await toggle.getAttribute('aria-label');
+            assert.ok(label);
+            await toggle.press('Enter');
+            assert.equal(await password.getAttribute('type'), 'text');
+            assert.notEqual(await toggle.getAttribute('aria-label'), label);
+            await toggle.click();
+            assert.equal(await password.getAttribute('type'), 'password');
+            assert.equal(await password.inputValue(), 'Sample password');
+            await password.clear();
+            if (width === 1440) await page.locator('.mv-account-visual img').evaluate(img => img.decode());
+            if (width !== 768) await page.screenshot({ path: resolve(evidence, 'purchase-login-' + width + '.png') });
+        }
+        await page.getByRole('link', { name: /ورود یا عضویت/ }).click();
+        await page.waitForURL(/mode=otp/);
+        assert.equal(new URL(page.url()).searchParams.get('return'), 'checkout');
+        assert.equal(await page.locator('.mv-account-method [aria-current=page]').innerText(), 'رمز یک‌بارمصرف');
     }],
 ];
 

@@ -21,6 +21,13 @@ add_action('wp_enqueue_scripts', static function (): void {
     if (is_home() || is_category() || is_singular('post')) {
         wp_enqueue_style('moalem-editorial', get_theme_file_uri('assets/editorial.css'), ['moalem-varzesh'], wp_get_theme()->get('Version'));
     }
+    if (function_exists('is_cart') && (is_cart() || is_checkout() || is_account_page())) {
+        $version = wp_get_theme()->get('Version');
+        wp_enqueue_style('moalem-purchase', get_theme_file_uri('assets/purchase.css'), ['moalem-varzesh'], $version);
+        if (is_cart()) {
+            wp_enqueue_script('moalem-purchase', get_theme_file_uri('assets/purchase.js'), [], $version, ['strategy' => 'defer', 'in_footer' => true]);
+        }
+    }
     wp_enqueue_script('moalem-social-links', get_theme_file_uri('assets/social-links.js'), [], wp_get_theme()->get('Version'), ['strategy' => 'defer', 'in_footer' => true]);
     if (is_front_page()) {
         wp_enqueue_script('moalem-hero-slider', get_theme_file_uri('assets/hero-slider.js'), [], wp_get_theme()->get('Version'), ['strategy' => 'defer', 'in_footer' => true]);
@@ -29,6 +36,8 @@ add_action('wp_enqueue_scripts', static function (): void {
 
 function mv_icon(string $name): void {
     $icons = [
+        'check' => '<path d="m5 12 4 4L19 6"/>',
+        'bag' => '<path d="M5 8h14l1 13H4L5 8Z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/>',
         'arrow' => '<path d="M19 12H5m6-6-6 6 6 6"/>',
         'search' => '<circle cx="11" cy="11" r="6.8"/><path d="m16 16 4.2 4.2"/>',
         'user' => '<circle cx="12" cy="8" r="3.2"/><path d="M5 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2z"/>',
@@ -46,6 +55,8 @@ function mv_icon(string $name): void {
         echo '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $icons[$name] . '</svg>';
     }
 }
+
+require_once __DIR__ . '/purchase.php';
 
 function mv_shop_url(): string {
     return function_exists('wc_get_page_permalink') ? wc_get_page_permalink('shop') : home_url('/shop/');

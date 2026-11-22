@@ -241,6 +241,6 @@ add_action('wp', static function (): void {
     }
     add_action('woocommerce_before_checkout_form', static function (): void {
         $url = add_query_arg('return', 'checkout', wc_get_page_permalink('myaccount'));
-        printf('<p class="woocommerce-info"><a href="%s">ورود با شماره موبایل</a></p>', esc_url($url));
-    }, 10);
+        printf('<p class="mv-checkout-login"><span>از قبل حساب دارید؟</span><a href="%s">ورود با شماره موبایل</a></p>', esc_url($url));
+    }, 9);
 });

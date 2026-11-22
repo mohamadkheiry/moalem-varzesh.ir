@@ -37,6 +37,7 @@ update_option('woocommerce_specific_ship_to_countries', ['IR']);
 update_option('woocommerce_coming_soon', 'no');
 update_option('woocommerce_cart_redirect_after_add', 'no');
 update_option('woocommerce_enable_guest_checkout', 'yes');
+update_option('woocommerce_enable_checkout_login_reminder', 'yes');
 update_option('woocommerce_enable_myaccount_registration', 'yes');
 update_option('mv_enamad_enabled', 1);
 update_option('permalink_structure', '/%postname%/');

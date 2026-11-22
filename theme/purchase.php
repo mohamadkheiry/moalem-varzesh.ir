@@ -56,6 +56,14 @@ add_filter('woocommerce_checkout_coupon_message', static function (): string {
     return '<a href="#" role="button" aria-controls="woocommerce-checkout-form-coupon" aria-expanded="false" class="showcoupon">وارد کردن کد تخفیف</a>';
 });
 
+add_filter('woocommerce_get_privacy_policy_text', static function (string $text, string $type): string {
+    $default = 'Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our [privacy_policy].';
+    if ($type === 'checkout' && $text === $default) {
+        return 'از اطلاعات شخصی شما برای رسیدگی به سفارش، پشتیبانی هنگام استفاده از سایت و موارد توضیح‌داده‌شده در [privacy_policy] استفاده می‌کنیم.';
+    }
+    return $text;
+}, 10, 2);
+
 function mv_checkout_item_image(string $name, array $item): string {
     return '<span class="mv-review-item-image">' . $item['data']->get_image('woocommerce_gallery_thumbnail', ['alt' => '']) . '</span>' . $name;
 }

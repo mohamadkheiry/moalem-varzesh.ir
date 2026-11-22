@@ -464,6 +464,11 @@ const cases = [
             assert.ok(await page.locator('#place_order').isVisible());
             await page.locator('.mv-checkout-review .blockUI').first().waitFor({ state: 'hidden' });
             assert.equal(await page.locator('.mv-checkout-review .order-total .amount').evaluate(el => getComputedStyle(el).whiteSpace), 'nowrap');
+            const privacy = page.locator('.woocommerce-privacy-policy-text');
+            if (await privacy.count()) {
+                assert.match(await privacy.innerText(), /^[آ-ی]/);
+                assert.ok(await privacy.locator('a').isVisible());
+            }
             if (width !== 768) await page.screenshot({ path: resolve(evidence, 'purchase-checkout-' + width + '.png') });
             if (width === 320) {
                 const coupon = page.getByRole('button', { name: 'وارد کردن کد تخفیف' });

@@ -7,6 +7,9 @@ $links = [
     ['whatsapp', 'واتساپ', 'https://wa.me/message/EMDTPXP6JVVMC1'],
     ['chat', 'ایتا', 'https://eitaa.com/MoalemVarzesh_Store'],
 ];
+if (function_exists('mv_bale_channel_url') && ($bale_url = mv_bale_channel_url(mv_bale_settings()))) {
+    $links[] = ['chat', 'کانال بله', $bale_url];
+}
 ?>
 <details class="mv-social">
     <summary class="mv-social-toggle">

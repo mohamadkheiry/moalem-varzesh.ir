@@ -205,6 +205,7 @@ if (wp_get_environment_type() === 'local') {
 }
 
 require_once __DIR__ . '/print-options.php';
+require_once __DIR__ . '/product-page.php';
 require_once __DIR__ . '/editorial.php';
 require_once __DIR__ . '/storefront.php';
 require_once __DIR__ . '/support.php';

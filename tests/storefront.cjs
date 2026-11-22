@@ -154,6 +154,10 @@ const cases = [
     ['06', 'گالری و قیمت گزینهٔ سفارشی محصول متغیر', async page => {
         await go(page, pathOf(messi));
         assert.equal(await page.locator('h1').innerText(), messi.name);
+        const product = page.locator('.mv-product-page');
+        assert.ok(await product.locator('.mv-product-stock').isVisible());
+        assert.ok(await product.locator('.mv-product-buy form.cart').isVisible());
+        assert.match(await product.getByRole('link', { name: 'پرسش دربارهٔ کالا' }).getAttribute('href'), /\/contact-us\/$/);
         await page.locator('.woocommerce-product-gallery__image img').first().evaluate(img => img.decode());
         const image = await page.locator('.woocommerce-product-gallery__image img').first().getAttribute('src');
         assert.equal(new URL(image).origin, base);

@@ -38,6 +38,8 @@ async function inspect({ kind, url, hero, alt }) {
         .map(match => JSON.parse(match[1]));
     if (kind === 'product') {
         assert.ok(blocks.some(block => hasType(block, 'Product')), 'WooCommerce Product schema is missing');
+        assert.ok(html.includes('mv-product-page') && html.includes('mv-product-stock') && html.includes('mv-product-buy')
+            && html.includes('woocommerce-product-gallery'), 'Product overview, gallery or purchase area is missing');
         assert.ok(!JSON.stringify(blocks).includes('"priceCurrency":"IRT"'), 'Non-ISO currency used in product schema');
         assert.ok(!descriptions.has(description[0]), 'Duplicate product description');
         assert.ok(html.includes('mv-related-guides'), 'No product-to-guide navigation');

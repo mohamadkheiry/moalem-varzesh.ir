@@ -1,0 +1,24 @@
+.mv-bale-admin { max-width: 75rem; }
+.mv-bale-grid { display: grid; gap: 1rem; align-items: start; }
+.mv-bale-panel { min-width: 0; padding: 1.2rem; border: 1px solid #d5dfd8; border-radius: .8rem; background: #fff; }
+.mv-bale-panel h2 { margin: 0 0 1rem; }
+.mv-bale-panel label { display: block; margin-block: .65rem .35rem; font-weight: 600; }
+.mv-bale-panel :is(input:not([type="checkbox"]):not([type="submit"]):not([type="hidden"]), textarea, select) { width: 100%; min-height: 2.5rem; margin-block-start: .25rem; }
+.mv-bale-panel .mv-bale-check { font-weight: 400; }
+.mv-bale-panel .mv-bale-check input { margin-inline: 0 .35rem; }
+.mv-bale-panel fieldset { margin-block: .8rem; }
+.mv-bale-panel legend { font-weight: 700; }
+.mv-bale-test { margin-block-start: .8rem; }
+.mv-bale-picker { margin-block-end: .85rem; }
+.mv-bale-picker .button { margin-block-start: .45rem; }
+.mv-bale-message { overflow: hidden; border: 1px solid #cad8ce; border-radius: .8rem; background: #eff5ee; color: #173324; }
+.mv-bale-message > img { display: block; width: 100%; height: auto; max-height: 14rem; object-fit: contain; background: #e3eee4; }
+.mv-bale-message > div { padding: 1rem; }
+.mv-bale-message h3 { margin-block: 0 .6rem; font-size: 1.06rem; }
+.mv-bale-message :is(h3, p) { overflow-wrap: anywhere; line-height: 1.65; }
+.mv-bale-message a { display: block; padding: .55rem; border-radius: .4rem; background: #24583d; color: #fff; text-align: center; text-decoration: none; }
+.mv-bale-history { overflow-x: auto; }
+@media (min-width: 62rem) {
+    .mv-bale-grid { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+    .mv-bale-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+}

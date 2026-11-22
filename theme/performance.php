@@ -59,6 +59,7 @@ foreach ([
     'woocommerce_product_set_stock_status', 'woocommerce_variation_set_stock_status',
     'update_option_mv_support_design', 'add_option_mv_support_design', 'delete_option_mv_support_design',
     'update_option_mv_commerce_public_contact_phone', 'add_option_mv_commerce_public_contact_phone',
+    'update_option_mv_bale_settings', 'add_option_mv_bale_settings', 'delete_option_mv_bale_settings',
     'update_option_mv_enamad_enabled', 'update_option_blog_public', 'wp_update_nav_menu',
     'created_product_cat', 'edited_product_cat', 'delete_product_cat',
 ] as $change) {

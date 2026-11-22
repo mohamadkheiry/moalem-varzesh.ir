@@ -122,7 +122,7 @@
     font-size: .86rem;
     text-decoration: none;
 }
-.mv-product-page .mv-product-help:hover { text-decoration: underline; }
+.mv-product-page .mv-product-help:hover { color: var(--ink); }
 .mv-product-help svg { width: 1.15rem; height: 1.15rem; }
 .mv-product-page .woocommerce-tabs {
     min-width: 0;
@@ -192,7 +192,7 @@
     line-height: 1.6;
     overflow-wrap: anywhere;
 }
-.mv-spec-values a { color: var(--green); text-underline-offset: .22em; }
+.mv-spec-values a { color: var(--green); font-weight: 700; }
 .mv-spec-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: .48rem; }
 .mv-spec-group {
     min-width: 0;
@@ -209,7 +209,6 @@
     margin-block-start: .65rem;
     color: var(--green);
     font-weight: 750;
-    text-underline-offset: .22em;
 }
 .mv-spec-purchase-link svg { width: 1.05rem; height: 1.05rem; }
 #mv-product-options { scroll-margin-block: 1rem; }

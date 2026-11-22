@@ -100,7 +100,7 @@
     border-radius: .65rem;
 }
 .mv-purchase .woocommerce-cart-form .product-name :is(a, dl, p) { overflow-wrap: anywhere; }
-.mv-purchase .woocommerce-cart-form .product-name a { font-size: .95rem; text-decoration-color: #9aaca2; text-underline-offset: .2em; }
+.mv-purchase .woocommerce-cart-form .product-name a { font-size: .95rem; }
 .mv-purchase .woocommerce-cart-form dl.variation { margin: .25rem 0 0; color: var(--muted); font-size: .77rem; }
 .mv-purchase .woocommerce-cart-form .product-remove a.remove { color: #a13434 !important; background: #f9efec; }
 .mv-purchase .woocommerce-cart-form .product-remove a.remove:hover { color: var(--white) !important; background: #a13434; }
@@ -188,7 +188,7 @@
     color: var(--purchase-deep);
     font-size: .88rem;
 }
-.mv-checkout-login a { display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 740; text-underline-offset: .2em; }
+.mv-checkout-login a { display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 740; }
 .mv-purchase form.woocommerce-checkout { display: grid; align-items: start; gap: var(--purchase-gap); }
 .mv-purchase #customer_details :is(.col-1, .col-2) { float: none; width: 100%; }
 .mv-purchase #customer_details h3 { margin: 0 0 .7rem; }
@@ -231,7 +231,7 @@
     background: var(--white);
 }
 .mv-purchase .woocommerce-form-coupon-toggle .woocommerce-info::before { display: none; }
-.mv-purchase .woocommerce-form-coupon-toggle .showcoupon { display: inline-flex; align-items: center; min-height: 2.75rem; font-size: .88rem; text-underline-offset: .2em; }
+.mv-purchase .woocommerce-form-coupon-toggle .showcoupon { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--purchase-forest); font-size: .88rem; font-weight: 720; }
 .mv-purchase .woocommerce-order ul.order_details { display: flex; flex-wrap: wrap; gap: .65rem; padding: 0; }
 .mv-purchase .woocommerce-order ul.order_details::before,
 .mv-purchase .woocommerce-order ul.order_details::after { display: none; }
@@ -278,7 +278,7 @@
     text-decoration: none;
 }
 .mv-account-method [aria-current="page"] { border-color: var(--purchase-line); background: var(--white); font-weight: 800; }
-.mv-account-method a:hover { text-decoration: underline; text-underline-offset: .2em; }
+.mv-account-method a:hover { color: var(--purchase-forest); background: var(--white); }
 .mv-purchase .woocommerce .mv-account form.login { margin: 0; padding: 0; border: 0; }
 .mv-purchase .woocommerce .mv-account .form-row { padding: 0; margin-block-end: .85rem; }
 .mv-purchase .woocommerce .mv-account .mv-account-submit { width: 100%; }
@@ -315,8 +315,6 @@
     font: inherit;
     font-size: .85rem;
     font-weight: 720;
-    text-decoration: underline;
-    text-underline-offset: .2em;
     cursor: pointer;
 }
 .mv-account .mv-otp-resend:disabled { color: var(--muted); cursor: default; text-decoration: none; }
@@ -348,7 +346,7 @@
 .mv-purchase .woocommerce .mv-password-field .show-password-input.display-password::after { content: "پنهان"; }
 .mv-purchase .woocommerce .mv-password-field .show-password-input:hover { background: var(--purchase-mint); }
 .mv-account-links { display: flex; flex-wrap: wrap; gap: 0 .7rem; margin-block-start: .25rem; }
-.mv-account-links a { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--purchase-forest); font-size: .82rem; font-weight: 690; text-underline-offset: .2em; }
+.mv-account-links a { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--purchase-forest); font-size: .82rem; font-weight: 690; }
 .mv-account-visual {
     position: relative;
     isolation: isolate;

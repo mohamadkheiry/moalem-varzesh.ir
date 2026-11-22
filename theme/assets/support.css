@@ -80,7 +80,6 @@
 .site-footer .mv-footer-links a:focus-visible {
     outline: 2px solid var(--footer-feature);
     outline-offset: 2px;
-    text-decoration: underline;
 }
 @media (hover: hover) {
     .site-footer .mv-footer-links a:hover {
@@ -107,7 +106,7 @@
 
 .mv-support-page { max-width: 78rem; margin-block: clamp(1rem, 2.6vw, 2rem) clamp(2rem, 5vw, 4rem); }
 .mv-support-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin-block-end: .58rem; color: var(--muted); font-size: .83rem; }
-.mv-support-crumbs a { display: inline-flex; align-items: center; min-height: 2.75rem; text-underline-offset: .18em; }
+.mv-support-crumbs a { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--green); font-weight: 700; }
 .mv-support-hero {
     display: grid;
     overflow: hidden;
@@ -136,7 +135,7 @@
 .mv-support-body > :last-child { margin-block-end: 0; }
 .mv-support-body h2 { scroll-margin-top: 1.25rem; margin: 1.6rem 0 .52rem; color: var(--ink); font-size: clamp(1.17rem, 2.4vw, 1.65rem); }
 .mv-support-body h3 { font-size: 1.12rem; }
-.mv-support-body a { color: var(--green); text-underline-offset: .2em; }
+.mv-support-body a { color: var(--green); font-weight: 700; }
 .mv-support-body img { max-width: 100%; height: auto; border-radius: .55rem; }
 .mv-support-body table { display: block; max-width: 100%; overflow: auto; }
 .mv-support-page--contact .mv-support-body { max-width: 54rem; }
@@ -152,7 +151,7 @@
 .mv-support-outline { padding: .85rem 1rem; background: #edf2eb; }
 .mv-support-outline h2 { margin: 0 0 .4rem; font-size: 1rem; }
 .mv-support-outline ul { padding: 0; margin: 0; list-style: none; }
-.mv-support-outline a { display: flex; min-height: 2.75rem; align-items: center; color: var(--green); text-underline-offset: .2em; font-size: .88rem; }
+.mv-support-outline a { display: flex; min-height: 2.75rem; align-items: center; color: var(--green); font-size: .88rem; }
 .mv-support-related h2 { margin: 0 0 .6rem; font-size: clamp(1.14rem, 2.4vw, 1.42rem); }
 .mv-support-related > div { display: flex; gap: .55rem; flex-wrap: wrap; }
 .mv-support-related a {
@@ -169,7 +168,7 @@
     font-weight: 720;
     text-decoration: none;
 }
-.mv-support-related a:hover { text-decoration: underline; }
+.mv-support-related a:hover { border-color: var(--green); }
 .mv-support-related svg { flex: none; width: 1rem; height: 1rem; }
 @media (min-width: 48rem) {
     .site-footer .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; }

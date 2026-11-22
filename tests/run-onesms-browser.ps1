@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory)]
     [string] $Runtime,
-    [string] $Cases = '06,08,09,14,16,20,24,25,26,27,29',
+    [string] $Cases = '06,08,09,14,16,20,24,25,26,27,29,31',
     [ValidateSet(402, 503)]
     [int] $FailureStatus = 503
 )
@@ -34,7 +34,7 @@ $settings = @{
     failureStatus = $FailureStatus
     expires = [DateTimeOffset]::UtcNow.AddMinutes(12).ToUnixTimeSeconds()
 }
-foreach ($case in @('06', '08', '09', '16', '20', '24', '25', '26', '27', '29')) {
+foreach ($case in @('06', '08', '09', '16', '20', '24', '25', '26', '27', '29', '31')) {
     do {
         $candidate = '0900' + (Get-Random -Minimum 1000000 -Maximum 9999999)
     } while ($candidate -eq $phone -or $settings.purchasePhones.Values -contains $candidate)

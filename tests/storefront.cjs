@@ -18,7 +18,7 @@ const socks = source.find(p => p.type === 'simple' && p.is_in_stock);
 const soldOut = variants.find(p => !p.is_in_stock);
 const soldOutParent = source.find(p => p.id === soldOut.parent);
 const customerPassword = 'Storefront fixture password Q4757!';
-const purchaseCases = ['06', '08', '09', '14', '16', '20', '24', '25', '26', '27', '29'];
+const purchaseCases = ['06', '08', '09', '14', '16', '20', '24', '25', '26', '27', '29', '31'];
 
 async function go(page, path, status = 200) {
     const response = await page.goto(base + path, { waitUntil: 'domcontentloaded' });
@@ -1103,6 +1103,56 @@ const cases = [
             options.find(option => option.value.includes('بدون چاپ'))?.value);
         await choices.selectOption(unprinted);
         assert.ok(await page.locator('#mv-print-name').isHidden());
+    }],
+    ['31', 'حذف زیرخط متن در هر دو طرح و حفظ فوکوس و قیمت تخفیفی', async page => {
+        async function assertNoUnderlines() {
+            const decorated = await page.evaluate(() => Array.from(document.querySelectorAll('body, body *'))
+                .filter(element => [null, '::before', '::after'].some(pseudo =>
+                    getComputedStyle(element, pseudo).textDecorationLine.includes('underline')))
+                .map(element => element.tagName + ' ' + element.getAttribute('class')).slice(0, 12));
+            assert.deepEqual(decorated, [], page.url());
+        }
+        const publicPages = [
+            '/', '/shop/', pathOf(messi), '/blog/', '/futsal-court-sole-guide/',
+            '/contact-us/', '/terms-and-conditions/', '/refund_returns-2/', '/my-account/', '/my-account/?mode=otp',
+        ];
+        for (const [design, width] of [['primary', 1440], ['secondary', 390]]) {
+            await page.setViewportSize({ width, height: 900 });
+            await go(page, '/?mv_design=' + design);
+            for (const path of publicPages) {
+                await go(page, path);
+                assert.equal(await page.locator('body.mv-' + design).count(), 1);
+                await assertNoUnderlines();
+            }
+            await go(page, pathOf(messi));
+            await page.locator('li.additional_information_tab a').click();
+            await page.locator('.mv-spec-purchase-link').hover();
+            await assertNoUnderlines();
+            await page.evaluate(() => {
+                const sample = document.createElement('p');
+                sample.id = 'text-decoration-fixture';
+                sample.innerHTML = '<del>۱۵۰ تومان</del><ins>۱۰۰ تومان</ins><u>متن نمونه</u><a href="#main" style="text-decoration: underline">پیوند نمونه</a>';
+                document.querySelector('main').prepend(sample);
+            });
+            await assertNoUnderlines();
+            assert.equal(await page.locator('#text-decoration-fixture del').evaluate(el => getComputedStyle(el).textDecorationLine), 'line-through');
+            const sampleLink = page.locator('#text-decoration-fixture a');
+            await sampleLink.focus();
+            await page.keyboard.press('Tab');
+            await page.keyboard.press('Shift+Tab');
+            assert.ok(await sampleLink.evaluate(el => el.matches(':focus-visible') && getComputedStyle(el).outlineStyle !== 'none'));
+            await assertNoUnderlines();
+        }
+        await signedInFixture(page, '31');
+        for (const path of ['/my-account/orders/', '/my-account/edit-address/']) {
+            await go(page, path);
+            await assertNoUnderlines();
+        }
+        await putSimpleInCart(page);
+        await assertNoUnderlines();
+        await page.locator('a.checkout-button').click();
+        await page.waitForURL('**/checkout/');
+        await assertNoUnderlines();
     }],
 ];
 

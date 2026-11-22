@@ -43,7 +43,7 @@
 .guide-card-content { padding: 1rem clamp(1rem, 2.5vw, 1.4rem) 1.25rem; }
 .guide-card h2 { margin: 0 0 .52rem; font-size: clamp(1.08rem, 2.4vw, 1.32rem); }
 .guide-card h2 a { text-decoration: none; }
-.guide-card h2 a:hover { color: var(--green); text-decoration: underline; }
+.guide-card h2 a:hover { color: var(--green); }
 .guide-card p { margin: 0; color: var(--muted); line-height: 1.85; font-size: .92rem; }
 .editorial-index .pagination { margin-block: 1.75rem 0; }
 .editorial-index .nav-links { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; }

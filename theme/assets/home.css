@@ -53,7 +53,7 @@
 .mv-home-guide-copy h3 { margin: 0; font-size: clamp(1rem, 1.5vw, 1.23rem); line-height: 1.6; }
 .mv-home-guide-topic { margin: 0 0 .26rem; color: var(--green); font-size: .78rem; font-weight: 760; }
 .mv-home-guide-excerpt { display: -webkit-box; margin: .38rem 0 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: var(--muted); font-size: .83rem; }
-.mv-home-guide > a:hover h3 { text-decoration: underline; text-underline-offset: .23em; }
+.mv-home-guide > a:hover h3 { color: var(--green); }
 .mv-home-weekly {
     padding: clamp(.7rem, 2.25vw, 1.55rem);
     border: 1px solid #d7e2d6;

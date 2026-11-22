@@ -20,6 +20,9 @@ if (is_order_received_page()) {
 }
 $guest_login = $stage === 'account' && !is_user_logged_in() && function_exists('mv_commerce_account_mode');
 $titles = ['cart' => 'سبد خرید', 'checkout' => 'تسویه‌حساب', 'receipt' => 'نتیجهٔ سفارش', 'pay' => 'پرداخت سفارش'];
+if ($stage === 'account' && is_user_logged_in()) {
+    $titles['account'] = 'حساب کاربری';
+}
 $descriptions = [
     'cart' => 'کالاها، تعداد و مبلغ سبد را پیش از ادامهٔ خرید بررسی کنید.',
     'checkout' => 'نشانی تحویل را وارد کنید و جزئیات سفارش را پیش از ثبت بررسی کنید.',

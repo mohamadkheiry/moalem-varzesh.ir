@@ -35,6 +35,9 @@ add_action('wp_enqueue_scripts', static function (): void {
     if (function_exists('is_cart') && (is_cart() || is_checkout() || is_account_page())) {
         $version = wp_get_theme()->get('Version');
         wp_enqueue_style('moalem-purchase', get_theme_file_uri('assets/purchase.css'), ['moalem-varzesh'], $version);
+        if (is_user_logged_in() && (is_account_page() || is_checkout())) {
+            wp_enqueue_style('mv-customer-area', get_theme_file_uri('assets/customer-area.css'), ['moalem-purchase'], $version);
+        }
         if (is_cart()) {
             wp_enqueue_script('moalem-purchase', get_theme_file_uri('assets/purchase.js'), [], $version, ['strategy' => 'defer', 'in_footer' => true]);
         }
@@ -71,6 +74,9 @@ function mv_icon(string $name): void {
         'document' => '<path d="M14 4H6v16h12V8l-4-4Zm0 0v4h4M9 12h6m-6 4h6"/>',
         'return' => '<path d="m8 5-4 4 4 4M4 9h11a4.5 4.5 0 0 1 0 9h-3"/>',
         'shield' => '<path d="M12 3 5 6v5.25c0 4.4 2.5 7.3 7 9.5 4.5-2.2 7-5.1 7-9.5V6l-7-3Zm-3 9 2 2 4-4"/>',
+        'pin' => '<path d="M19 10c0 5-7 10.5-7 10.5S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.2"/>',
+        'plus' => '<path d="M12 5v14M5 12h14"/>',
+        'box' => '<path d="M4 7.5 12 4l8 3.5v9L12 20l-8-3.5zM4 7.5l8 3.5 8-3.5M12 11v9M8 5.75l8 3.5"/>',
     ];
     if (isset($icons[$name])) {
         echo '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $icons[$name] . '</svg>';
@@ -78,6 +84,7 @@ function mv_icon(string $name): void {
 }
 
 require_once __DIR__ . '/purchase.php';
+require_once __DIR__ . '/customer-area.php';
 
 function mv_shop_url(): string {
     return function_exists('wc_get_page_permalink') ? wc_get_page_permalink('shop') : home_url('/shop/');

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Moalem Commerce
  * Description: ورود با موبایل، پیامک فروشگاه و انتشار در کانال بله
- * Version: 1.5.2
+ * Version: 1.6.0
  * Requires PHP: 8.1
  */
 defined('ABSPATH') || exit;
@@ -12,6 +12,7 @@ require_once __DIR__ . '/sms.php';
 require_once __DIR__ . '/manager.php';
 require_once __DIR__ . '/account.php';
 require_once __DIR__ . '/purchase-gate.php';
+require_once __DIR__ . '/addresses.php';
 require_once __DIR__ . '/manager-otp.php';
 require_once __DIR__ . '/templates/manager-otp-pages.php';
 require_once __DIR__ . '/bale.php';

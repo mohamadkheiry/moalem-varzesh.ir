@@ -88,16 +88,7 @@ function mv_commerce_find_customer(string $phone): int {
 }
 
 function mv_commerce_with_mobile_lock(string $phone, callable $action) {
-    global $wpdb;
-    $lock = mv_commerce_key('customer-mobile-lock', $phone);
-    if ((string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 3)', $lock)) !== '1') {
-        return new WP_Error('account_busy');
-    }
-    try {
-        return $action();
-    } finally {
-        $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock));
-    }
+    return mv_commerce_with_lock(mv_commerce_key('customer-mobile-lock', $phone), $action);
 }
 
 function mv_commerce_create_customer(string $phone, string $password, bool $verified) {

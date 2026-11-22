@@ -18,7 +18,7 @@ const socks = source.find(p => p.type === 'simple' && p.is_in_stock);
 const soldOut = variants.find(p => !p.is_in_stock);
 const soldOutParent = source.find(p => p.id === soldOut.parent);
 const customerPassword = 'Storefront fixture password Q4757!';
-const purchaseCases = ['06', '08', '09', '14', '16', '20', '24', '25'];
+const purchaseCases = ['06', '08', '09', '14', '16', '20', '24', '25', '26', '27'];
 
 async function go(page, path, status = 200) {
     const response = await page.goto(base + path, { waitUntil: 'domcontentloaded' });
@@ -893,6 +893,110 @@ const cases = [
         await page.waitForURL('**/cart/');
         assert.ok((await page.locator('.cart_item .product-name').innerText()).includes(socks.name));
         assert.equal(await page.locator('.cart_item').count(), 1);
+    }],
+    ['26', 'دفترچهٔ نشانی، اعتبارسنجی، پیش‌فرض و انتخاب در تسویه‌حساب', async page => {
+        const fixture = await signedInFixture(page, '26');
+        await go(page, '/my-account/edit-address/');
+        assert.ok(await page.getByRole('heading', { name: 'هنوز نشانی ذخیره نکرده‌اید' }).isVisible());
+        async function fillAddress(label, street, postcode) {
+            for (const [key, value] of Object.entries({
+                label, address_1: street, postcode, first_name: 'گیرنده', last_name: 'آزمایشی',
+                city: 'تهران', address_2: 'واحد ۲', phone: '۰۹۰۰۱۲۳۴۵۶۷',
+            })) await page.locator('#mv_ship_' + key).fill(value);
+            await page.locator('#mv_ship_state').selectOption('THR');
+        }
+        const add = page.getByRole('link', { name: 'افزودن نشانی' });
+        const save = page.getByRole('button', { name: 'ذخیرهٔ نشانی' });
+        await add.click();
+        await page.setViewportSize({ width: 390, height: 844 });
+        await fillAddress('خانه', 'خیابان ورزشی، پلاک ۱۲', '۱۲۳۴۵۶۷۸۹');
+        await save.click();
+        await page.getByText('کد پستی باید ۱۰ رقم باشد.').waitFor();
+        assert.equal(await page.locator('#mv_ship_address_1').inputValue(), 'خیابان ورزشی، پلاک ۱۲');
+        await page.locator('#mv_ship_postcode').fill('۱۲۳۴۵۶۷۸۹۰');
+        await save.click();
+        await page.locator('.mv-address-card.is-default').getByText('خانه', { exact: true }).waitFor();
+        assert.ok(await page.getByText('1234567890', { exact: true }).isVisible());
+        await add.click();
+        await fillAddress('باشگاه', 'باشگاه، پلاک ۸', '1111111111');
+        await save.click();
+        const club = page.locator('.mv-address-card').filter({ hasText: 'باشگاه' });
+        await club.getByRole('link', { name: 'ویرایش' }).click();
+        await page.locator('#mv_ship_address_1').fill('باشگاه، پلاک ۱۰');
+        await save.click();
+        await club.getByRole('button', { name: 'پیش‌فرض شود' }).click();
+        await page.locator('.mv-address-card.is-default').getByText('باشگاه', { exact: true }).waitFor();
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await page.screenshot({ path: resolve(evidence, 'customer-addresses-mobile.png') });
+        await putSimpleInCart(page);
+        await go(page, '/checkout/');
+        assert.equal(await page.locator('#billing_address_1').inputValue(), 'باشگاه، پلاک ۱۰');
+        assert.equal(await page.locator('#billing_phone').inputValue(), fixture.purchasePhones['26']);
+        await page.locator('#mv-checkout-address').selectOption({ label: 'خانه' });
+        await page.getByRole('button', { name: 'استفاده از نشانی' }).click();
+        await page.waitForURL(/mv_checkout_address=/);
+        assert.equal(await page.locator('#billing_address_1').inputValue(), 'خیابان ورزشی، پلاک ۱۲');
+        assert.ok(await page.locator('form.checkout .mv-checkout-address-picker').count() === 0);
+        await page.locator('#billing_phone').fill(fixture.phone);
+        await page.locator('#billing_email').fill(fixture.email);
+        await page.locator('.woocommerce-checkout-payment').getByText('پرداخت آزمایشی', { exact: true }).waitFor();
+        const terms = page.locator('input#terms');
+        if (await terms.isVisible()) await terms.check();
+        await page.locator('#place_order').click();
+        await page.waitForURL(/order-received\/\d+/);
+        const orderId = new URL(page.url()).pathname.match(/order-received\/(\d+)/)[1];
+        await go(page, '/my-account/edit-address/');
+        await page.locator('.mv-legacy-addresses summary').click();
+        await page.locator('.mv-legacy-addresses article').filter({ hasText: 'نشانی صورتحساب' }).getByRole('link', { name: 'کپی در دفترچه' }).click();
+        assert.equal(await page.locator('#mv_ship_address_1').inputValue(), 'خیابان ورزشی، پلاک ۱۲');
+        await page.getByRole('link', { name: 'انصراف' }).click();
+        await club.getByRole('link', { name: 'حذف', exact: true }).click();
+        await page.getByRole('link', { name: 'انصراف' }).click();
+        assert.ok(await club.isVisible());
+        await club.getByRole('link', { name: 'حذف', exact: true }).click();
+        await page.getByRole('button', { name: 'حذف نشانی' }).click();
+        assert.equal(await club.count(), 0);
+        assert.match(await page.locator('.mv-address-card.is-default').innerText(), /خانه/);
+        await page.locator('.mv-address-card.is-default').getByRole('link', { name: 'ویرایش' }).click();
+        await page.locator('#mv_ship_address_1').fill('نشانی تازهٔ خانه');
+        await save.click();
+        await go(page, '/my-account/view-order/' + orderId + '/');
+        const shipping = page.locator('.woocommerce-column--shipping-address');
+        assert.match(await shipping.innerText(), /خیابان ورزشی، پلاک ۱۲/);
+        assert.match(await shipping.innerText(), /09001234567/);
+        assert.doesNotMatch(await shipping.innerText(), /نشانی تازهٔ خانه/);
+    }],
+    ['27', 'سابقهٔ سفارش، فیلتر، صفحه‌بندی، جزئیات و مالکیت سفارش', async page => {
+        await signedInFixture(page, '27');
+        await go(page, '/my-account/orders/');
+        assert.ok(await page.getByText('هنوز سفارشی ثبت نکرده‌اید').isVisible());
+        const seeded = await go(page, '/my-account/orders/?mv_history_seed=1');
+        const foreign = seeded.headers()['x-mv-qa-foreign-order'];
+        assert.match(foreign, /^\d+$/);
+        assert.equal(await page.locator('.mv-order-card').count(), 8);
+        assert.ok(await page.locator('.mv-order-thumbnails img').first().isVisible());
+        const filter = page.getByRole('navigation', { name: 'فیلتر وضعیت سفارش' });
+        await filter.getByRole('link', { name: 'جاری', exact: true }).click();
+        assert.equal(await page.locator('.mv-order-card [data-status=processing]').count(), 8);
+        await page.getByRole('link', { name: 'صفحهٔ بعد' }).click();
+        assert.equal(new URL(page.url()).searchParams.get('mv_orders'), 'active');
+        assert.equal(await page.locator('.mv-order-card').count(), 1);
+        await filter.getByRole('link', { name: 'تکمیل‌شده', exact: true }).click();
+        assert.equal(await page.locator('.mv-order-card [data-status=completed]').count(), 1);
+        await page.screenshot({ path: resolve(evidence, 'customer-orders-desktop.png') });
+        await page.getByRole('link', { name: /جزئیات سفارش/ }).click();
+        assert.ok(await page.getByRole('heading', { name: /سفارش \d+/ }).isVisible());
+        assert.ok(await page.getByText('به‌روزرسانی آزمایشی قابل مشاهده برای مشتری').isVisible());
+        assert.ok(await page.getByText('نشانی ثبت‌شده روی سفارش').isVisible());
+        assert.equal(await page.locator('.mv-order-progress [aria-current=step]').innerText(), 'تکمیل');
+        assert.ok(await page.locator('.mv-order-line-image img').isVisible());
+        await page.setViewportSize({ width: 390, height: 844 });
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        await page.screenshot({ path: resolve(evidence, 'customer-order-mobile.png') });
+        await go(page, '/my-account/view-order/' + foreign + '/');
+        assert.equal(await page.locator('.mv-order-detail').count(), 0);
+        assert.equal(await page.getByText('نشانی ثبت‌شده روی سفارش').count(), 0);
     }],
 ];
 

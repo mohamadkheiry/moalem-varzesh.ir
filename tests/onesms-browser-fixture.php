@@ -54,4 +54,46 @@ if (($_SERVER['HTTP_X_MV_QA_MODE'] ?? '') === $fixture['tag']) {
             add_user_meta($id, '_mv_browser_qa_tag', $fixture['tag'], true);
         }
     });
+    add_action('template_redirect', static function () use ($fixture): void {
+        $user = get_current_user_id();
+        if (($_GET['mv_history_seed'] ?? '') !== '1' || !is_account_page() || !is_wc_endpoint_url('orders')
+            || get_user_meta($user, '_mv_browser_qa_tag', true) !== $fixture['tag']
+            || get_user_meta($user, '_mv_unverified_mobile', true) !== ($fixture['purchasePhones']['27'] ?? null)) {
+            return;
+        }
+        $source = 'mv-qa-history-' . $fixture['tag'];
+        if (wc_get_orders(['created_via' => $source, 'limit' => 1])) {
+            return;
+        }
+        $products = wc_get_products(['type' => 'simple', 'stock_status' => 'instock', 'limit' => 1]);
+        if (!$products) {
+            return;
+        }
+        add_filter('woocommerce_can_reduce_order_stock', '__return_false');
+        $shipping = [
+            'first_name' => 'گیرنده', 'last_name' => 'آزمایشی', 'country' => 'IR',
+            'state' => 'THR', 'city' => 'تهران', 'address_1' => 'نشانی ثبت‌شده روی سفارش',
+            'postcode' => '1234567890',
+        ];
+        foreach (array_merge(array_fill(0, 9, 'processing'), ['completed', 'cancelled', 'refunded', 'foreign']) as $status) {
+            $order = new WC_Order();
+            $order->set_created_via($source);
+            $order->set_customer_id($status === 'foreign' ? 0 : $user);
+            $order->set_status($status === 'foreign' ? 'on-hold' : $status);
+            $order->set_address($shipping, 'shipping');
+            $order->save();
+            $order->add_product($products[0], 1);
+            $delivery = new WC_Order_Item_Shipping();
+            $delivery->set_method_id('flat_rate');
+            $delivery->set_method_title('ارسال آزمایشی');
+            $order->add_item($delivery);
+            $order->calculate_totals();
+            if ($status === 'completed') {
+                $order->add_order_note('به‌روزرسانی آزمایشی قابل مشاهده برای مشتری', true);
+            } elseif ($status === 'foreign') {
+                header('X-MV-QA-Foreign-Order: ' . $order->get_id());
+            }
+        }
+        remove_filter('woocommerce_can_reduce_order_stock', '__return_false');
+    }, 13);
 }

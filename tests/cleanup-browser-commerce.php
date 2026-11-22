@@ -11,6 +11,11 @@ $fixture_path = getenv('MV_QA_SMS_FIXTURE');
 $fixture = $fixture_path && is_readable($fixture_path) ? json_decode(file_get_contents($fixture_path), true) : [];
 $test_phones = ($fixture['tag'] ?? '') === $tag ? array_values($fixture['purchasePhones'] ?? []) : [];
 global $wpdb;
+foreach (wc_get_orders(['created_via' => 'mv-qa-history-' . $tag, 'limit' => 20]) as $order) {
+    if ($order->get_created_via() === 'mv-qa-history-' . $tag) {
+        $order->delete(true);
+    }
+}
 foreach (wc_get_orders(['billing_email' => $email, 'limit' => 10]) as $order) {
     if ($order->get_billing_phone() !== $phone) {
         continue;

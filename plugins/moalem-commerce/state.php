@@ -25,6 +25,18 @@ function mv_commerce_key(string $scope, string $value): string {
     return hash_hmac('sha256', $scope . '|' . $value, wp_salt('auth'));
 }
 
+function mv_commerce_with_lock(string $key, callable $action) {
+    global $wpdb;
+    if ((string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 3)', $key)) !== '1') {
+        return new WP_Error('account_busy');
+    }
+    try {
+        return $action();
+    } finally {
+        $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $key));
+    }
+}
+
 function mv_commerce_read(string $key): ?array {
     global $wpdb;
     $table = mv_commerce_table();

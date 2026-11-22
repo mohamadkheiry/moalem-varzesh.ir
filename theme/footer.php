@@ -37,10 +37,18 @@
             </div>
             <?php endif; ?>
         </div>
-        <?php if ($footer['footer_credit'] !== '') : ?><div class="footer-end"><?php echo esc_html($footer['footer_credit']); ?></div><?php endif; ?>
+        <div class="footer-end mv-footer-end">
+            <?php if ($footer['footer_credit'] !== '') : ?><p><?php echo esc_html($footer['footer_credit']); ?></p><?php endif; ?>
+            <nav class="mv-design-switch" aria-label="نسخهٔ طراحی فروشگاه">
+                <?php foreach (['primary' => 'نسخهٔ اولیه', 'secondary' => 'نسخهٔ ثانویه'] as $design => $label) : ?>
+                    <a rel="nofollow" href="<?php echo esc_url(add_query_arg('mv_design', $design)); ?>" <?php if (mv_store_design() === $design) echo 'aria-current="page"'; ?>><?php echo esc_html($label); ?></a>
+                <?php endforeach; ?>
+            </nav>
+        </div>
     </div>
 </footer>
 <?php get_template_part('template-parts/social-links'); ?>
+<?php echo mv_secondary_markup('dock'); ?>
 <?php wp_footer(); ?>
 </body>
 </html>

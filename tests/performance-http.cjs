@@ -35,6 +35,20 @@ const hit = response => response.headers.get('x-wp-super-cache') || '';
     for (const token of ['woocommerce_items_in_cart=1', 'wp_woocommerce_session_test=1', 'mv_account_session=1']) {
         assert.equal(hit(await visit('/', { Cookie: token })), '', token);
     }
+    const design = await visit('/?mv_design=secondary');
+    assert.equal(design.status, 303);
+    assert.match(design.headers.get('cache-control'), /no-store/);
+    assert.ok(design.headers.getSetCookie().some(cookie => cookie.startsWith('mv_store_design=secondary')));
+    const secondary = await visit('/', { Cookie: 'mv_store_design=secondary' });
+    assert.equal(secondary.status, 200);
+    assert.equal(hit(secondary), '');
+    const secondaryHtml = await secondary.text();
+    assert.match(secondaryHtml, /class="[^"]*mv-secondary[^"]*"/);
+    assert.match(secondaryHtml, /data-mv-rnw="hero"/);
+    assert.match(secondaryHtml, /<meta name=['"]robots['"] content=['"][^'"]*noindex/);
+    const primary = await (await visit('/')).text();
+    assert.match(primary, /class="[^"]*mv-primary[^"]*"/);
+    assert.doesNotMatch(primary, /data-mv-rnw=/);
     const prefetch = await visit('/my-account/?return=cart', { 'Sec-Purpose': 'prefetch' });
     assert.equal(prefetch.status, 204);
     assert.ok(!prefetch.headers.getSetCookie().some(cookie => cookie.startsWith('mv_account_session=')));

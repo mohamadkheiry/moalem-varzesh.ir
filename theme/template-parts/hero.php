@@ -8,12 +8,22 @@ $slides = [
     ['guards', 'ساق‌بند فوتبال', 780, 780],
     ['socks', 'جوراب ورزشی', 780, 780],
 ];
+$secondary = mv_store_design() === 'secondary';
+if ($secondary) {
+    $boots = $slides[1];
+    array_splice($slides, 1, 1);
+    array_unshift($slides, $boots);
+}
 ?>
 <section class="hero" data-hero aria-roledescription="اسلایدر" aria-labelledby="home-title">
     <div class="hero-copy">
         <h1 id="home-title"><span>لباس و تجهیزات</span> <span>ورزشی</span></h1>
         <p>پوشاک، کفش و لوازم تمرین</p>
-        <a class="button-primary" href="<?php echo esc_url(mv_shop_url()); ?>">مشاهده فروشگاه <?php mv_icon('arrow'); ?></a>
+        <?php if ($action = mv_secondary_markup('hero')) : ?>
+            <?php echo $action; ?>
+        <?php else : ?>
+            <a class="button-primary" href="<?php echo esc_url(mv_shop_url()); ?>">مشاهده فروشگاه <?php mv_icon('arrow'); ?></a>
+        <?php endif; ?>
     </div>
     <div class="hero-stage" aria-hidden="true">
         <?php foreach ($slides as $index => [$asset, , $width, $height]) : ?>

@@ -17,7 +17,9 @@
             <input type="hidden" name="post_type" value="product">
             <button type="submit" aria-label="جست‌وجو"><?php mv_icon('search'); ?></button>
         </form>
-        <?php if (function_exists('wc_get_cart_url')) : ?>
+        <?php if ($actions = mv_secondary_markup('actions')) : ?>
+            <?php echo $actions; ?>
+        <?php elseif (function_exists('wc_get_cart_url')) : ?>
         <div class="header-actions">
             <a class="icon-link" href="<?php echo esc_url(wc_get_page_permalink('myaccount')); ?>" aria-label="حساب کاربری" title="حساب کاربری" <?php if (is_account_page()) echo 'aria-current="page"'; ?>><?php mv_icon('user'); ?></a>
             <a class="icon-link" href="<?php echo esc_url(wc_get_cart_url()); ?>" aria-label="سبد خرید" title="سبد خرید" <?php if (is_cart()) echo 'aria-current="page"'; ?>><?php mv_icon('cart'); ?></a>

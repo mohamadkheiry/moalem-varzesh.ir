@@ -18,7 +18,7 @@ const socks = source.find(p => p.type === 'simple' && p.is_in_stock);
 const soldOut = variants.find(p => !p.is_in_stock);
 const soldOutParent = source.find(p => p.id === soldOut.parent);
 const customerPassword = 'Storefront fixture password Q4757!';
-const purchaseCases = ['06', '08', '09', '14', '16', '20', '24', '25', '26', '27'];
+const purchaseCases = ['06', '08', '09', '14', '16', '20', '24', '25', '26', '27', '29'];
 
 async function go(page, path, status = 200) {
     const response = await page.goto(base + path, { waitUntil: 'domcontentloaded' });
@@ -1002,6 +1002,61 @@ const cases = [
         await go(page, '/my-account/view-order/' + foreign + '/');
         assert.equal(await page.locator('.mv-order-detail').count(), 0);
         assert.equal(await page.getByText('نشانی ثبت‌شده روی سفارش').count(), 0);
+    }],
+    ['28', 'تغییر نسخه، اسلایدر، واکنش‌گرایی و ورود از طرح ثانویه', async page => {
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await go(page, '/');
+        assert.equal(await page.locator('body.mv-primary').count(), 1);
+        assert.equal(await page.locator('.hero-slide-jersey.is-active').count(), 1);
+        await page.getByRole('link', { name: 'نسخهٔ ثانویه' }).click();
+        await page.locator('body.mv-secondary .hero-slide-boots.is-active img').evaluate(img => img.decode());
+        await page.getByRole('button', { name: 'تصویر بعدی' }).waitFor({ state: 'visible' });
+        assert.equal(new URL(page.url()).search, '');
+        assert.equal(await page.getByRole('link', { name: 'نسخهٔ ثانویه' }).getAttribute('aria-current'), 'page');
+        assert.equal(await page.locator('[data-mv-rnw=hero]').getAttribute('href'), base + '/shop/');
+        const dock = page.getByRole('navigation', { name: 'میانبرهای فروشگاه' });
+        for (const width of [320, 390, 768, 1536]) {
+            await page.setViewportSize({ width, height: width > 767 ? 970 : 844 });
+            assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            assert.equal(await dock.isVisible(), width < 768);
+            if (width === 390 || width === 1536) {
+                await page.evaluate(() => scrollTo(0, 0));
+                await page.screenshot({ path: resolve(evidence, 'secondary-home-' + width + '.png') });
+            }
+        }
+        await page.getByRole('button', { name: 'تصویر بعدی' }).click();
+        await page.locator('.hero-slide-jersey.is-active').waitFor({ state: 'attached' });
+        await page.locator('[data-mv-rnw=hero]').click();
+        await page.waitForURL('**/shop/');
+        assert.equal(await page.locator('body.mv-secondary').count(), 1);
+        await page.locator('ul.products li.product .woocommerce-LoopProduct-link').first().click();
+        await page.locator('.mv-product-page h1').waitFor();
+        assert.equal(await page.locator('body.mv-secondary').count(), 1);
+        await page.setViewportSize({ width: 390, height: 844 });
+        await dock.getByRole('link', { name: 'سبد خرید' }).click();
+        const dialog = page.getByRole('dialog');
+        await dialog.getByRole('heading', { name: 'ورود به حساب' }).waitFor();
+        await page.keyboard.press('Escape');
+        await dialog.waitFor({ state: 'hidden' });
+        await page.getByRole('link', { name: 'نسخهٔ اولیه' }).click();
+        assert.equal(await page.locator('body.mv-primary').count(), 1);
+        assert.equal(await page.locator('[data-mv-rnw]').count(), 0);
+    }],
+    ['29', 'حساب، سبد و تسویه‌حساب در نسخهٔ ثانویه', async page => {
+        await signedInFixture(page, '29');
+        await go(page, '/my-account/?mv_design=secondary');
+        assert.equal(await page.locator('body.mv-secondary').count(), 1);
+        await page.getByRole('link', { name: 'نشانی‌های من' }).click();
+        assert.ok(await page.getByRole('heading', { name: 'نشانی‌های من' }).isVisible());
+        await putSimpleInCart(page);
+        assert.equal(await page.locator('body.mv-secondary').count(), 1);
+        await page.locator('a.checkout-button').click();
+        await page.waitForURL('**/checkout/');
+        assert.equal(await page.locator('body.mv-secondary').count(), 1);
+        assert.ok(await page.locator('form.woocommerce-checkout #billing_phone').isVisible());
+        await page.getByRole('link', { name: 'نسخهٔ اولیه' }).click();
+        assert.equal(await page.locator('body.mv-primary').count(), 1);
+        assert.ok(await page.locator('.woocommerce-checkout-review-order-table').innerText().then(text => text.includes(socks.name)));
     }],
 ];
 

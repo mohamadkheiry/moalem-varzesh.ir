@@ -228,3 +228,4 @@ require_once __DIR__ . '/support.php';
 require_once __DIR__ . '/performance.php';
 require_once __DIR__ . '/search-visibility.php';
 require_once __DIR__ . '/mobile-store.php';
+require_once __DIR__ . '/variants.php';

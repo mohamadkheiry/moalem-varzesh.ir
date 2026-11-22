@@ -1,7 +1,7 @@
 /*
 Theme Name: Moalem Varzesh
 Description: قالب فارسی سبک فروشگاه معلم ورزش برای ووکامرس
-Version: 1.14.4
+Version: 1.15.2
 Requires at least: 7.0
 Requires PHP: 8.1
 Text Domain: moalem-varzesh
@@ -893,6 +893,11 @@ button, input, select, textarea { font: inherit; }
     color: #c9d6ca;
     font-size: .8rem;
 }
+.mv-footer-end { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem 1rem; }
+.mv-footer-end p { margin: 0; }
+.mv-design-switch { display: flex; flex-wrap: wrap; gap: .25rem; }
+.mv-design-switch a { display: inline-flex; min-height: 2.75rem; align-items: center; padding-inline: .65rem; border-radius: .55rem; color: #e0eadd; }
+.mv-design-switch a[aria-current="page"] { background: #ffffff18; color: var(--lime); font-weight: 750; text-decoration: none; }
 
 @media (min-width: 48rem) {
     .wrap { width: min(calc(100% - 7vw), var(--width)); }

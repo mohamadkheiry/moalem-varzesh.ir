@@ -1,7 +1,7 @@
-<?php get_header(); ?>
+<?php get_header(); $secondary = mv_store_design() === 'secondary'; ?>
 <main id="main" class="wrap">
     <?php get_template_part('template-parts/hero'); ?>
-    <?php get_template_part('template-parts/home-shoes'); ?>
+    <?php if (!$secondary) get_template_part('template-parts/home-shoes'); ?>
     <?php $terms = mv_top_categories(4); if ($terms) : ?>
     <section class="section" aria-labelledby="categories-title">
         <div class="section-head"><h2 id="categories-title">دسته‌بندی کالاها</h2></div>
@@ -24,6 +24,10 @@
         </div>
     </section>
     <?php endif; ?>
+    <?php if ($secondary) :
+        get_template_part('template-parts/home-new');
+        get_template_part('template-parts/home-shoes');
+    endif; ?>
     <?php get_template_part('template-parts/home-guides'); ?>
     <?php if (class_exists('WooCommerce')) : ?>
     <?php $weekly = mv_weekly_products(); if ($weekly) : ?>
@@ -35,13 +39,7 @@
             implode(',', array_map('absint', $weekly)))); ?>
     </section>
     <?php endif; ?>
-    <section class="section woocommerce" aria-labelledby="new-title">
-        <div class="section-head">
-            <h2 id="new-title">تازه‌های فروشگاه</h2>
-            <a class="text-link" href="<?php echo esc_url(mv_shop_url()); ?>">همهٔ کالاها <?php mv_icon('arrow'); ?></a>
-        </div>
-        <?php echo do_shortcode('[products limit="8" columns="4" orderby="date" order="DESC" visibility="visible"]'); ?>
-    </section>
+    <?php if (!$secondary) get_template_part('template-parts/home-new'); ?>
     <?php endif; ?>
 </main>
 <?php get_footer(); ?>

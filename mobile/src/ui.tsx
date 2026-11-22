@@ -3,12 +3,8 @@ import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View 
 import type { ImageSourcePropType, StyleProp, TextProps, ViewStyle } from 'react-native';
 import { ArrowLeft, Check, ImageOff, Search, ShoppingBag, Shirt, X } from './icons';
 import type { IconComponent } from './icons';
-
-export const color = {
-  paper: '#F7F7F2', white: '#FFFFFF', ink: '#142821', forest: '#122820',
-  green: '#266348', muted: '#536259', line: '#DCE2D9', soft: '#ECEFE8',
-  lime: '#DCFA62', limeLight: '#EFF8CB', danger: '#9E3833',
-};
+import color from './design-tokens.json';
+export { color };
 
 export const font = { regular: 'Vazir', medium: 'VazirMedium', bold: 'VazirBold' };
 

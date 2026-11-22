@@ -19,6 +19,7 @@ $cookies = [
     '^woocommerce_(?:items_in_cart|cart_hash|recently_viewed)$',
     '^wp_woocommerce_session_',
     '^mv_account_session$',
+    '^mv_store_design$',
 ];
 $settings = [
     'wp_cache_mod_rewrite' => 0,

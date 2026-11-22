@@ -235,6 +235,7 @@ add_action('template_redirect', static function (): void {
             mv_commerce_account_error(match ($result->get_error_code()) {
                 'otp_limit' => 'تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.',
                 'otp_cooldown' => 'برای درخواست دوبارهٔ کد، یک دقیقه صبر کنید.',
+                'sms_billing' => 'ارسال کد پیامکی فعلاً در دسترس نیست. اگر رمز عبور دارید، از گزینهٔ «رمز عبور» وارد شوید.',
                 default => 'ارسال پیامک تأیید نشد. می‌توانید دوباره درخواست کد بدهید.',
             });
             if (!$resend) {

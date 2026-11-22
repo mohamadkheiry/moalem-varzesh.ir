@@ -27,6 +27,7 @@ $mock = static function ($pre, array $options, string $url) use (&$requests, &$p
         'fail' => new WP_Error('http_request_failed', 'simulated network failure'),
         'reject' => ['response' => ['code' => 200], 'body' => '{"success":false}'],
         'bad_status' => ['response' => ['code' => 429], 'body' => '{"success":false}'],
+        'billing' => ['response' => ['code' => 402], 'body' => '{"success":false}'],
         default => ['response' => ['code' => 200], 'body' => '{"success":true}'],
     };
 };
@@ -93,6 +94,8 @@ try {
     $check(mv_commerce_sms($phone, 'آزمون')->get_error_code() === 'sms_rejected', 'provider application rejection');
     $provider = 'bad_status';
     $check(mv_commerce_sms($phone, 'آزمون')->get_error_code() === 'sms_rejected', 'provider HTTP 429 rejection');
+    $provider = 'billing';
+    $check(mv_commerce_sms($phone, 'آزمون')->get_error_code() === 'sms_billing', 'provider HTTP 402 is reported as an SMS billing error');
     $provider = 'fail';
     $check(mv_commerce_otp_request($phone, $ip)->get_error_code() === 'sms_transport', 'failed transport leaves no usable OTP');
     $check(!mv_commerce_otp_verify($phone, $sent_code()), 'failed delivery code cannot authorize a session');

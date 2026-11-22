@@ -32,7 +32,7 @@ add_filter('pre_http_request', static function ($pre, array $config, string $url
     if (isset($code[0]) && (str_contains($payload['body'], 'کد ورود') || str_contains($payload['body'], 'کد تأیید شمارهٔ ورود مدیر'))) {
         if (($_SERVER['HTTP_X_MV_QA_MODE'] ?? '') === $fixture['tag'] && !file_exists($fixture['capture'] . '.failed')) {
             file_put_contents($fixture['capture'] . '.failed', '', LOCK_EX);
-            return ['response' => ['code' => 503], 'body' => '{"success":false}'];
+            return ['response' => ['code' => (int) ($fixture['failureStatus'] ?? 503)], 'body' => '{"success":false}'];
         }
         file_put_contents($fixture['capture'], $code[0], LOCK_EX);
     }

@@ -331,7 +331,12 @@ const cases = [
             send.click(),
         ]);
         assert.equal(failed.status(), 303);
-        await page.getByText('ارسال پیامک تأیید نشد.', { exact: false }).waitFor();
+        const unavailable = fixture.failureStatus === 402 ? 'ارسال کد پیامکی فعلاً در دسترس نیست.' : 'ارسال پیامک تأیید نشد.';
+        await page.getByText(unavailable, { exact: false }).waitFor();
+        if (fixture.failureStatus === 402) {
+            const passwordLogin = page.getByRole('link', { name: 'رمز عبور', exact: true });
+            assert.equal(await passwordLogin.getAttribute('href'), base + '/my-account/');
+        }
         assert.equal(await page.locator('#mv-phone').inputValue(), fixture.phone);
         assert.equal(await page.locator('#mv-code').count(), 0);
         assert.ok(!existsSync(fixture.capture));

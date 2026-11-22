@@ -49,6 +49,9 @@ function mv_commerce_sms(string $phone, string $body) {
         return mv_commerce_sms_failure('sms_transport');
     }
     $status = (int) wp_remote_retrieve_response_code($response);
+    if ($status === 402) {
+        return mv_commerce_sms_failure('sms_billing', $status);
+    }
     $reply = json_decode(wp_remote_retrieve_body($response), true);
     if ($status < 200 || $status >= 300 || ($reply['success'] ?? null) === false || !empty($reply['error'])) {
         return mv_commerce_sms_failure('sms_rejected', $status);

@@ -1,7 +1,9 @@
 param(
     [Parameter(Mandatory)]
     [string] $Runtime,
-    [string] $Cases = '14,16'
+    [string] $Cases = '14,16',
+    [ValidateSet(402, 503)]
+    [int] $FailureStatus = 503
 )
 
 $ErrorActionPreference = 'Stop'
@@ -28,6 +30,7 @@ $settings = @{
     orderCapture = $orderCapture
     email = $email
     tag = $tag
+    failureStatus = $FailureStatus
     expires = [DateTimeOffset]::UtcNow.AddMinutes(12).ToUnixTimeSeconds()
 }
 

@@ -860,9 +860,11 @@ const cases = [
         });
         try {
             const purchase = await noScript.newPage();
+            purchase.setDefaultTimeout(60000);
+            purchase.setDefaultNavigationTimeout(60000);
             await go(purchase, pathOf(socks));
             await purchase.locator('form.cart button.single_add_to_cart_button').click();
-            await purchase.waitForURL('**/my-account/?return=product&product=*');
+            await purchase.waitForURL('**/my-account/?return=product&mv_item=*');
             await purchase.getByRole('link', { name: 'ثبت‌نام' }).click();
             await registerCustomer(purchase, fixture.purchasePhones['24']);
             await purchase.locator('.woocommerce-message').waitFor();

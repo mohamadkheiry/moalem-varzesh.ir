@@ -196,8 +196,8 @@ function mv_commerce_account_url(string $mode = 'login'): string {
     $return = $_GET['return'] ?? '';
     if (in_array($return, ['cart', 'checkout', 'product'], true)) {
         $args['return'] = $return;
-        if ($return === 'product' && isset($_GET['product']) && is_scalar($_GET['product'])) {
-            $args['product'] = absint($_GET['product']);
+        if ($return === 'product' && is_scalar($_GET['mv_item'] ?? null)) {
+            $args['mv_item'] = absint($_GET['mv_item']);
         }
     }
     if (mv_commerce_modal_request()) {
@@ -279,8 +279,13 @@ add_action('template_redirect', static function (): void {
     if (!function_exists('is_account_page') || !is_account_page() || is_user_logged_in()) {
         return;
     }
-    mv_commerce_account_session();
     nocache_headers();
+    $purpose = strtolower((string) ($_SERVER['HTTP_SEC_PURPOSE'] ?? $_SERVER['HTTP_PURPOSE'] ?? ''));
+    if (str_contains($purpose, 'prefetch')) {
+        status_header(204);
+        exit;
+    }
+    mv_commerce_account_session();
     if (is_wc_endpoint_url('lost-password')) {
         wp_safe_redirect(mv_commerce_account_url('otp'), 302);
         exit;

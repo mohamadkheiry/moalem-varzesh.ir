@@ -35,6 +35,9 @@ const hit = response => response.headers.get('x-wp-super-cache') || '';
     for (const token of ['woocommerce_items_in_cart=1', 'wp_woocommerce_session_test=1', 'mv_account_session=1']) {
         assert.equal(hit(await visit('/', { Cookie: token })), '', token);
     }
+    const prefetch = await visit('/my-account/?return=cart', { 'Sec-Purpose': 'prefetch' });
+    assert.equal(prefetch.status, 204);
+    assert.ok(!prefetch.headers.getSetCookie().some(cookie => cookie.startsWith('mv_account_session=')));
 
     const cssPath = '/wp-content/themes/moalem-varzesh/style.css?ver=mv-perf-test';
     const style = await visit(cssPath);

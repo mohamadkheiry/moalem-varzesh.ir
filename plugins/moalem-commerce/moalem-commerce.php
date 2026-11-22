@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Moalem Commerce
  * Description: ورود با موبایل، پیامک فروشگاه و انتشار در کانال بله
- * Version: 1.5.1
+ * Version: 1.5.2
  * Requires PHP: 8.1
  */
 defined('ABSPATH') || exit;

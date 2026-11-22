@@ -2,7 +2,7 @@
 defined('ABSPATH') || exit;
 
 function mv_commerce_purchase_return_url(): string {
-    $id = is_scalar($_GET['product'] ?? null) ? absint($_GET['product']) : 0;
+    $id = is_scalar($_GET['mv_item'] ?? null) ? absint($_GET['mv_item']) : 0;
     if (!$id || get_post_type($id) !== 'product' || get_post_status($id) !== 'publish') {
         return wc_get_page_permalink('shop');
     }
@@ -54,7 +54,7 @@ add_action('wp_loaded', static function (): void {
     ]);
     WC()->session->set_customer_session_cookie(true);
     nocache_headers();
-    wp_safe_redirect(add_query_arg(['return' => 'product', 'product' => $id], wc_get_page_permalink('myaccount')), 303);
+    wp_safe_redirect(add_query_arg(['return' => 'product', 'mv_item' => $id], wc_get_page_permalink('myaccount')), 303);
     exit;
 }, 19);
 
@@ -77,6 +77,24 @@ add_action('template_redirect', static function (): void {
 }, 8);
 
 add_filter('woocommerce_checkout_registration_required', '__return_true');
+
+add_filter('wp_speculation_rules_href_exclude_paths', static function (array $paths): array {
+    if (!function_exists('wc_get_page_permalink')) {
+        return $paths;
+    }
+    $home_path = untrailingslashit((string) wp_parse_url(home_url('/'), PHP_URL_PATH));
+    foreach (['cart', 'checkout', 'myaccount'] as $page) {
+        $path = untrailingslashit((string) wp_parse_url(wc_get_page_permalink($page), PHP_URL_PATH));
+        if ($home_path !== '' && str_starts_with($path, $home_path . '/')) {
+            $path = substr($path, strlen($home_path));
+        }
+        if ($path !== '') {
+            $paths[] = $path;
+            $paths[] = $path . '/*';
+        }
+    }
+    return $paths;
+});
 
 function mv_commerce_purchase_dialog_available(): bool {
     return function_exists('is_account_page') && !is_user_logged_in() && !is_account_page();

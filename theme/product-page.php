@@ -2,8 +2,10 @@
 defined('ABSPATH') || exit;
 
 function mv_storefront_price_html(WC_Product $product, bool $compact = false): string {
+    $tags = wp_kses_allowed_html('post');
+    $tags['bdi'] = ['dir' => true];
     if (!$product->is_type('variable')) {
-        return $product->get_price_html();
+        return wp_kses($product->get_price_html(), $tags);
     }
 
     $format_range = static function (string $html, $from, $to) use ($compact): string {
@@ -20,7 +22,7 @@ function mv_storefront_price_html(WC_Product $product, bool $compact = false): s
 
     add_filter('woocommerce_format_price_range', $format_range, 20, 3);
     try {
-        return $product->get_price_html();
+        return wp_kses($product->get_price_html(), $tags);
     } finally {
         remove_filter('woocommerce_format_price_range', $format_range, 20);
     }
@@ -70,7 +72,7 @@ add_action('woocommerce_single_product_summary', static function (): void {
     woocommerce_template_single_meta();
     echo '</div><div class="mv-product-purchase" id="mv-product-options">';
     if ($product instanceof WC_Product && ($price = mv_storefront_price_html($product)) !== '') {
-        echo '<p class="price">' . wp_kses_post($price) . '</p>';
+        echo '<p class="price">' . $price . '</p>';
     }
     echo '<div class="mv-product-buy">';
 }, 29);

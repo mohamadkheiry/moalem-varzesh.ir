@@ -45,13 +45,23 @@ jobs:
           npx --no-install expo prebuild --platform android --no-install
       - name: Prepare Android SDK packages
         run: |
-          sdkmanager --install 'build-tools;37.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1'
+          sdkmanager_path=$(find "$ANDROID_HOME/cmdline-tools" -type f -path '*/bin/sdkmanager' | sort -V | tail -1)
+          test -x "$sdkmanager_path"
+          ndk_version=27.3.13750724
+          sdk_packages=()
+          [[ -x "$ANDROID_HOME/build-tools/37.0.0/apksigner" ]] || sdk_packages+=('build-tools;37.0.0')
+          [[ -f "$ANDROID_HOME/ndk/$ndk_version/source.properties" ]] || sdk_packages+=("ndk;$ndk_version")
+          [[ -x "$ANDROID_HOME/cmake/3.22.1/bin/cmake" ]] || sdk_packages+=('cmake;3.22.1')
+          if (( ${#sdk_packages[@]} )); then
+            "$sdkmanager_path" --install "${sdk_packages[@]}"
+          fi
           if [[ ! -d "$ANDROID_HOME/platforms/android-37" ]]; then
             if [[ ! -d "$ANDROID_HOME/platforms/android-37.0" ]]; then
-              sdkmanager --install 'platforms;android-37.0'
+              "$sdkmanager_path" --install 'platforms;android-37.0'
             fi
             ln -s android-37.0 "$ANDROID_HOME/platforms/android-37"
           fi
+          sed -i "/apply plugin: \"expo-root-project\"/i ext.ndkVersion = '$ndk_version'" android/build.gradle
       - name: Build the standalone APK
         working-directory: mobile/android
         run: ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64 --no-daemon --console=plain

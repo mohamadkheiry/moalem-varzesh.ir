@@ -1,7 +1,7 @@
 /*
 Theme Name: Moalem Varzesh
 Description: قالب فارسی سبک فروشگاه معلم ورزش برای ووکامرس
-Version: 1.16.3
+Version: 1.16.4
 Requires at least: 7.0
 Requires PHP: 8.1
 Text Domain: moalem-varzesh
@@ -591,14 +591,28 @@ button, input, select, textarea { font: inherit; }
 }
 
 .woocommerce ul.products li.product .price {
-    margin: auto 0 .55rem;
-    padding-inline: .1rem;
+    margin: auto 0 .48rem;
+    padding: .44rem .18rem .08rem;
+    border-block-start: 1px solid var(--line);
     color: var(--green);
-    font-size: .84rem;
-    font-weight: 820;
-    line-height: 1.55;
+    font-size: clamp(.86rem, 1.25vw, 1.12rem);
+    font-weight: 850;
+    line-height: 1.45;
 }
 .woocommerce .price bdi { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.woocommerce .price :is(.woocommerce-Price-currencySymbol, .mv-price-caption) {
+    color: var(--muted);
+    font-size: .74em;
+    font-weight: 650;
+}
+.woocommerce .price .mv-price-bound {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .3em;
+    white-space: nowrap;
+}
+.woocommerce .price del { color: var(--muted); font-size: .8em; font-weight: 650; }
+.woocommerce .price ins { color: inherit; text-decoration: none; font-weight: inherit; }
 
 .woocommerce :is(a, button, input).button,
 .woocommerce #respond input#submit {
@@ -624,17 +638,30 @@ button, input, select, textarea { font: inherit; }
     background: var(--soft);
 }
 
-.woocommerce ul.products li.product .button {
+.woocommerce ul.products li.product .button:not(.alt) {
     width: 100%;
     margin: 0;
-    padding-inline: .2rem;
+    min-block-size: 3rem;
+    padding: .45rem .32rem;
+    border: 1px solid var(--line-strong);
+    border-radius: .58rem;
+    background: var(--soft);
+    color: var(--green);
+    font-size: clamp(.77rem, 1.16vw, .9rem);
+    font-weight: 810;
+    line-height: 1.35;
+    white-space: normal;
+}
+.woocommerce ul.products li.product .button:not(.alt):hover {
+    border-color: var(--green);
+    background: var(--white);
+}
+.woocommerce ul.products li.product .product_type_simple.add_to_cart_button:not(.alt) {
     border-color: transparent;
     background: var(--lime);
     color: var(--ink);
-    font-size: .76rem;
 }
-.woocommerce ul.products li.product .button:hover {
-    border-color: var(--green);
+.woocommerce ul.products li.product .product_type_simple.add_to_cart_button:not(.alt):hover {
     background: var(--lime-hover);
 }
 .woocommerce ul.products li.product .added_to_cart { padding-block: .45rem; font-size: .83rem; }
@@ -952,8 +979,6 @@ button, input, select, textarea { font: inherit; }
     }
     .woocommerce ul.products li.product, .woocommerce-page ul.products li.product { padding: .65rem; }
     .woocommerce ul.products li.product .woocommerce-loop-product__title { font-size: .98rem; }
-    .woocommerce ul.products li.product .price { font-size: .95rem; }
-    .woocommerce ul.products li.product .button { font-size: .9rem; }
     .footer-grid { grid-template-columns: 1fr 1.5fr auto; gap: clamp(1rem, 4vw, 3rem); }
 }
 
@@ -996,7 +1021,6 @@ button, input, select, textarea { font: inherit; }
     .main-nav { column-gap: .65rem; }
     .main-nav a { font-size: .79rem; }
     .category-tile > svg { display: none; }
-    .woocommerce ul.products li.product .price { font-size: .77rem; }
 }
 
 .mv-social {

@@ -70,15 +70,19 @@
     font-size: clamp(1.5rem, 3vw, 2.75rem);
     line-height: 1.33;
 }
-.mv-product-page.woocommerce div.product .mv-product-purchase > .price {
-    margin: 0 0 .65rem;
-    color: #244c37;
-    font-size: clamp(1.24rem, 1.65vw, 1.9rem);
-    line-height: 1.45;
+.mv-product-page.woocommerce div.product .mv-product-purchase .price {
+    margin: 0;
+    color: var(--green);
+    font-size: clamp(1.22rem, 1.75vw, 1.72rem);
+    line-height: 1.32;
 }
-.mv-product-page .price del { font-size: .7em; opacity: .72; }
-.mv-product-page .price ins { text-decoration: none; }
-.mv-product-page .summary .price .woocommerce-Price-amount bdi { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+.mv-product-page .price .mv-price-range {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .2em .72em;
+}
+.mv-product-page .price .mv-price-range .mv-price-bound { font-size: .83em; }
 .mv-product-page .woocommerce-product-details__short-description { font-size: .95rem; line-height: 1.85; }
 .mv-product-info, .mv-product-purchase { min-width: 0; overflow-wrap: anywhere; }
 .mv-product-info .product_meta { margin-block: .8rem; color: var(--muted); font-size: .82rem; }
@@ -88,31 +92,57 @@
     border-radius: .9rem;
     background: var(--product-track);
 }
+.mv-product-page .mv-product-purchase > .price {
+    border-block-end: 1px solid var(--product-line);
+    padding-block-end: .58rem;
+}
+.mv-product-page .mv-product-purchase > .price + .mv-product-buy { padding-block-start: .65rem; }
 .mv-product-page.woocommerce div.product .mv-product-buy form.cart { margin: 0; }
 .mv-product-page.woocommerce div.product .mv-product-buy select { min-height: 2.75rem; min-width: 0; max-width: 100%; }
 .mv-product-page.woocommerce div.product .mv-product-buy .woocommerce-variation-add-to-cart,
 .mv-product-page.woocommerce div.product .mv-product-buy form.cart:not(.variations_form) {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     flex-wrap: wrap;
-    gap: .45rem;
+    gap: .5rem;
 }
 .mv-product-page.woocommerce div.product .mv-product-buy .quantity { float: none; margin: 0; }
+.mv-product-page.woocommerce div.product .mv-product-buy .quantity .qty {
+    inline-size: 3.45rem;
+    max-inline-size: 100%;
+    block-size: 100%;
+    padding-inline: .2rem;
+    font-variant-numeric: tabular-nums;
+}
 .mv-product-page .mv-product-buy fieldset { flex: 1 0 100%; box-sizing: border-box; min-inline-size: 0; }
-.mv-product-page .mv-product-buy .woocommerce-variation-price { margin-block-end: .6rem; }
-.mv-product-purchase:has(.woocommerce-variation-add-to-cart-enabled):has(.woocommerce-variation-price .amount) > .price { display: none; }
+.mv-product-page .mv-product-buy .woocommerce-variation-price:not(:empty) { margin-block-end: .55rem; }
+.mv-product-purchase:has(.single_variation:not([style*="display: none"]) .woocommerce-variation-price .amount) > .price { display: none; }
 .mv-product-page .mv-product-buy .stock { margin-block: .35rem; }
-.mv-product-page .mv-product-buy :is(.single_add_to_cart_button, .quantity .qty) { min-height: 3rem; }
+.mv-product-page .mv-product-buy :is(.single_add_to_cart_button, .quantity .qty) { min-height: 3.15rem; }
 .mv-product-page.woocommerce div.product .single_add_to_cart_button {
-    flex: 1 1 9rem;
+    flex: 1 1 8rem;
     width: auto;
+    min-width: 0;
     max-width: 100%;
     white-space: normal;
-    border-radius: .62rem;
-    background: #244f3b;
-    color: #fff;
+    padding-inline: .6rem;
+    border: 1px solid transparent;
+    border-radius: .65rem;
+    background: var(--green);
+    color: var(--white);
+    font-size: .93rem;
+    font-weight: 840;
 }
-.mv-product-page.woocommerce div.product .single_add_to_cart_button:hover { background: #173a2b; }
+.mv-product-page.woocommerce div.product .single_add_to_cart_button:not(:is(.disabled, :disabled)):hover {
+    background: var(--forest, #173a2b);
+}
+.mv-product-page.woocommerce div.product .single_add_to_cart_button:is(.disabled, :disabled) {
+    border-color: var(--product-line);
+    background: var(--product-track);
+    color: var(--muted);
+    cursor: not-allowed;
+    opacity: 1;
+}
 .mv-product-page .mv-product-help {
     display: inline-flex;
     min-height: 2.75rem;

@@ -1,6 +1,31 @@
 <?php
 defined('ABSPATH') || exit;
 
+function mv_storefront_price_html(WC_Product $product, bool $compact = false): string {
+    if (!$product->is_type('variable')) {
+        return $product->get_price_html();
+    }
+
+    $format_range = static function (string $html, $from, $to) use ($compact): string {
+        if (!is_numeric($from) || !is_numeric($to)) {
+            return $html;
+        }
+        $minimum = '<span class="mv-price-bound"><span class="mv-price-caption">از</span> ' . wc_price($from) . '</span>';
+        if ($compact) {
+            return $minimum;
+        }
+        return '<span class="mv-price-range">' . $minimum
+            . ' <span class="mv-price-bound"><span class="mv-price-caption">تا</span> ' . wc_price($to) . '</span></span>';
+    };
+
+    add_filter('woocommerce_format_price_range', $format_range, 20, 3);
+    try {
+        return $product->get_price_html();
+    } finally {
+        remove_filter('woocommerce_format_price_range', $format_range, 20);
+    }
+}
+
 add_action('wp_enqueue_scripts', static function (): void {
     if (function_exists('is_product') && is_product()) {
         wp_enqueue_style('mv-product-page', get_theme_file_uri('assets/product-page.css'), ['moalem-varzesh'], wp_get_theme()->get('Version'));
@@ -41,9 +66,12 @@ add_action('woocommerce_single_product_summary', static function (): void {
 }, 3);
 
 add_action('woocommerce_single_product_summary', static function (): void {
+    global $product;
     woocommerce_template_single_meta();
     echo '</div><div class="mv-product-purchase" id="mv-product-options">';
-    woocommerce_template_single_price();
+    if ($product instanceof WC_Product && ($price = mv_storefront_price_html($product)) !== '') {
+        echo '<p class="price">' . wp_kses_post($price) . '</p>';
+    }
     echo '<div class="mv-product-buy">';
 }, 29);
 add_action('woocommerce_single_product_summary', static function (): void {

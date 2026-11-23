@@ -113,14 +113,8 @@
     border-radius: .7rem;
     background: radial-gradient(ellipse at 45% 23%, #f4f8ef, #d4e4d7 91%);
 }
-.mv-secondary .woocommerce ul.products li.product .button {
-    border-color: var(--line);
-    border-radius: .65rem;
-    color: var(--green);
-}
-.mv-secondary .woocommerce ul.products li.product .button:hover { border-color: var(--green); background: var(--mv-app-limeLight); }
 .mv-secondary .mv-home-weekly, .mv-secondary .mv-product-purchase { border-color: var(--line); background: var(--mv-app-soft); }
-.mv-secondary :is(.mv-product-page .single_add_to_cart_button, .mv-area-primary, .mv-account-submit) {
+.mv-secondary :is(.mv-area-primary, .mv-account-submit) {
     border-radius: .75rem;
 }
 .mv-secondary .site-footer { background: var(--forest); }

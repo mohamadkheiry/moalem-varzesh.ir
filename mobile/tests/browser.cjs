@@ -121,11 +121,23 @@ const digitText = value => value.replace(/[۰-۹]/g, c => String('۰۱۲۳۴۵۶
     await by('review-open').click();
     await by('review-screen').waitFor();
     await capture('app-checkout');
+    const cartTransfer = page.waitForRequest(request => {
+      const url = new URL(request.url());
+      return url.origin === store && url.pathname === '/checkout/' && url.searchParams.has('session');
+    });
     await by('checkout-open').click();
-    await page.waitForURL(url => url.origin === store && url.pathname === '/checkout/', { timeout: 45000 });
-    await page.locator('#billing_email').waitFor();
-    assert.ok((await page.locator('.woocommerce-checkout-review-order-table').innerText()).includes('آزمون رابط'));
-    check('انتقال سبد به فرم تسویه‌حساب همان فروشگاه');
+    await cartTransfer;
+    await page.waitForURL(url => url.origin === store && (url.pathname === '/checkout/'
+      || (url.pathname === '/my-account/' && url.searchParams.get('return') === 'checkout')),
+    { timeout: 45000, waitUntil: 'domcontentloaded' });
+    if (new URL(page.url()).pathname === '/my-account/') {
+      await page.locator('#mv-phone').waitFor();
+      await page.getByRole('link', { name: 'ثبت‌نام', exact: true }).waitFor();
+    } else {
+      await page.locator('#billing_email').waitFor();
+      assert.ok((await page.locator('.woocommerce-checkout-review-order-table').innerText()).includes('آزمون رابط'));
+    }
+    check('انتقال سبد و ادامهٔ مسیر تسویه‌حساب در همان فروشگاه');
 
     await page.goto(base, { waitUntil: 'domcontentloaded' });
     await by('tab-cart').click();

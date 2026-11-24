@@ -1,15 +1,7 @@
 <?php
 defined('ABSPATH') || exit;
 $public_phone = function_exists('mv_commerce_public_contact_phone') ? mv_commerce_public_contact_phone() : '';
-$links = [
-    ['instagram', 'اینستاگرام', 'https://www.instagram.com/moalemvarzesh_store/'],
-    ['telegram', 'تلگرام', 'https://t.me/MoalemVarzesh_Store'],
-    ['whatsapp', 'واتساپ', 'https://wa.me/message/EMDTPXP6JVVMC1'],
-    ['chat', 'ایتا', 'https://eitaa.com/MoalemVarzesh_Store'],
-];
-if (function_exists('mv_bale_channel_url') && ($bale_url = mv_bale_channel_url(mv_bale_settings()))) {
-    $links[] = ['chat', 'کانال بله', $bale_url];
-}
+$links = mv_public_social_links();
 ?>
 <details class="mv-social">
     <summary class="mv-social-toggle">

@@ -738,7 +738,7 @@ const cases = [
             await page.setViewportSize({ width, height: 960 });
             await footer.scrollIntoViewIfNeeded();
             const [helpBox, policyBox] = await Promise.all([help.boundingBox(), policies.boundingBox()]);
-            assert.ok(width < 768
+            assert.ok(width < 384
                 ? helpBox.y + helpBox.height < policyBox.y
                 : Math.abs(helpBox.y - policyBox.y) < 1 && helpBox.x >= policyBox.x + policyBox.width, width);
             if (width >= 1024) {

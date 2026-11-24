@@ -45,6 +45,22 @@ function mv_footer_locations(): array {
     ];
 }
 
+function mv_public_social_links(): array {
+    static $links;
+    if ($links === null) {
+        $links = [
+            ['instagram', 'اینستاگرام', 'https://www.instagram.com/moalemvarzesh_store/'],
+            ['telegram', 'تلگرام', 'https://t.me/MoalemVarzesh_Store'],
+            ['whatsapp', 'واتساپ', 'https://wa.me/message/EMDTPXP6JVVMC1'],
+            ['chat', 'ایتا', 'https://eitaa.com/MoalemVarzesh_Store'],
+        ];
+        if (function_exists('mv_bale_channel_url') && ($bale_url = mv_bale_channel_url(mv_bale_settings()))) {
+            $links[] = ['chat', 'کانال بله', $bale_url];
+        }
+    }
+    return $links;
+}
+
 function mv_footer_default_items(): array {
     $groups = [
         'mv_footer_help' => ['guides', 'contact', 'about'],
@@ -119,15 +135,23 @@ function mv_support_settings(): array {
     return array_replace_recursive(mv_support_defaults(), is_array($settings) ? $settings : []);
 }
 
-function mv_support_cover(string $key, int $id, int $image): void {
+function mv_support_cover(string $key, int $id, int $image, bool $lazy = false): void {
     $attachment = $image && wp_attachment_is_image($image) ? $image : get_post_thumbnail_id($id);
     if ($attachment) {
-        echo wp_get_attachment_image($attachment, 'large', false, [
-            'alt' => '', 'sizes' => '(min-width: 768px) 47vw, 94vw', 'fetchpriority' => 'high', 'loading' => 'eager', 'decoding' => 'async',
-        ]);
-        return;
+        $attrs = ['alt' => '', 'decoding' => 'async'];
+        $attrs += $lazy
+            ? ['sizes' => '(min-width: 768px) 34vw, 38vw', 'loading' => 'lazy']
+            : ['sizes' => '(min-width: 768px) 47vw, 94vw', 'fetchpriority' => 'high', 'loading' => 'eager'];
+        if ($cover = wp_get_attachment_image($attachment, $lazy ? 'medium_large' : 'large', false, $attrs)) {
+            echo $cover;
+            return;
+        }
     }
     $filename = 'assets/support/' . mv_support_pages()[$key][4];
+    if ($lazy) {
+        printf('<img src="%s" alt="" width="640" height="427" loading="lazy" decoding="async">', esc_url(get_theme_file_uri($filename . '-640.webp')));
+        return;
+    }
     ?>
     <picture>
         <source media="(max-width: 767px)" srcset="<?php echo esc_url(get_theme_file_uri($filename . '-640.webp')); ?>">

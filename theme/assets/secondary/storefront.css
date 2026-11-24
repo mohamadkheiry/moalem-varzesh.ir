@@ -117,7 +117,7 @@
 .mv-secondary :is(.mv-area-primary, .mv-account-submit) {
     border-radius: .75rem;
 }
-.mv-secondary .site-footer { background: var(--forest); }
+.mv-secondary .site-footer { --footer-ground: var(--forest); }
 .mv-secondary-dock {
     position: fixed;
     z-index: 20;

@@ -751,6 +751,11 @@ const cases = [
             assert.equal(response.status(), href === '/cart/' ? 303 : 200, href);
         }
         const footer = page.locator('.site-footer');
+        const appDownload = footer.getByRole('link', { name: /دانلود فایل نصب APK/ });
+        const apk = new URL(await appDownload.getAttribute('href'));
+        assert.equal(apk.protocol, 'https:');
+        assert.match(apk.pathname, /\/moalem-varzesh-android-1\.1\.0-preview\.apk$/);
+        await appDownload.locator('img').evaluate(image => image.decode());
         const help = footer.locator('[data-menu="mv_footer_help"]');
         const policies = footer.locator('[data-menu="mv_footer_policies"]');
         assert.deepEqual(await help.locator('.mv-footer-link-icon').evaluateAll(icons => icons.map(icon => icon.dataset.icon)),
@@ -760,6 +765,10 @@ const cases = [
         for (const width of [320, 390, 768, 1024, 1440]) {
             await page.setViewportSize({ width, height: 960 });
             await footer.scrollIntoViewIfNeeded();
+            assert.ok(await appDownload.evaluate(link => {
+                const button = link.querySelector('.mv-footer-app-action').getBoundingClientRect();
+                return button.height >= 44 && button.left >= 0 && button.right <= innerWidth;
+            }), 'Android download at ' + width);
             const [helpBox, policyBox] = await Promise.all([help.boundingBox(), policies.boundingBox()]);
             assert.ok(width < 384
                 ? helpBox.y + helpBox.height < policyBox.y

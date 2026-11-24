@@ -121,6 +121,7 @@ function mv_support_defaults(): array {
         'footer_intro' => 'فروشگاه پوشاک، کفش و تجهیزات ورزشی',
         'footer_credit' => 'تمام حقوق فروشگاه معلم ورزش محفوظ است.',
         'footer_accent' => '#285b48',
+        'footer_android_url' => 'https://github.com/mohamadkheiry/moalem-varzesh.ir/releases/download/android-v1.1.0-preview/moalem-varzesh-android-1.1.0-preview.apk',
         'headings' => mv_footer_locations(),
         'pages' => [],
     ];

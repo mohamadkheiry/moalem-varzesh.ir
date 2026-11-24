@@ -8,6 +8,9 @@ function mv_support_sanitize_settings($submitted): array {
         $settings[$text] = sanitize_text_field($input[$text] ?? $settings[$text]);
     }
     $settings['footer_accent'] = sanitize_hex_color(sanitize_text_field($input['footer_accent'] ?? '')) ?: $settings['footer_accent'];
+    if (isset($input['footer_android_url'])) {
+        $settings['footer_android_url'] = sanitize_url(sanitize_text_field($input['footer_android_url']), ['https']);
+    }
     foreach (mv_footer_locations() as $location => $label) {
         $settings['headings'][$location] = sanitize_text_field($input['headings'][$location] ?? '') ?: $label;
     }
@@ -57,6 +60,10 @@ function mv_support_settings_screen(): void {
                     <label>معرفی کوتاه فروشگاه<input type="text" name="mv_support_design[footer_intro]" value="<?php echo esc_attr($settings['footer_intro']); ?>"></label>
                     <label>متن پایین فوتر<input type="text" name="mv_support_design[footer_credit]" value="<?php echo esc_attr($settings['footer_credit']); ?>"></label>
                     <label>رنگ فوتر<input type="color" name="mv_support_design[footer_accent]" value="<?php echo esc_attr($settings['footer_accent']); ?>"></label>
+                    <label>لینک دانلود فایل نصب اندروید
+                        <input type="url" name="mv_support_design[footer_android_url]" value="<?php echo esc_attr($settings['footer_android_url']); ?>" aria-describedby="mv-android-url-help">
+                        <small id="mv-android-url-help">نشانی مستقیم HTTPS فایل APK. برای پنهان‌کردن دکمه، این فیلد را خالی بگذارید.</small>
+                    </label>
                 </div>
                 <div class="mv-support-admin-menus">
                     <?php foreach (mv_footer_locations() as $location => $label) :

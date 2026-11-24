@@ -4,21 +4,40 @@ $defaults = mv_footer_default_items();
 $assigned = get_nav_menu_locations();
 $guide_id = mv_support_page_id('guides');
 $guide = $footer['pages']['guides'];
+$android_url = esc_url($footer['footer_android_url'], ['https']);
 $public_phone = function_exists('mv_commerce_public_contact_phone') ? mv_commerce_public_contact_phone() : '';
 ?>
 <footer id="site-footer" class="site-footer" style="--mv-footer-accent:<?php echo esc_attr(sanitize_hex_color($footer['footer_accent'])); ?>">
     <div class="wrap">
-        <?php if ($guide_id) : ?>
-            <a class="mv-footer-guide" href="<?php echo esc_url(get_permalink($guide_id)); ?>" aria-label="خواندن راهنمای خرید">
-                <div class="mv-footer-guide-copy">
-                    <strong>راهنمای خرید</strong>
-                    <?php if ($guide['intro'] !== '') : ?><span class="mv-footer-guide-intro"><?php echo esc_html(wp_trim_words($guide['intro'], 18)); ?></span><?php endif; ?>
-                    <span class="mv-footer-guide-action">خواندن راهنما <?php mv_icon('arrow'); ?></span>
-                </div>
-                <div class="mv-footer-guide-image" aria-hidden="true">
-                    <?php mv_support_cover('guides', $guide_id, (int) $guide['image'], true); ?>
-                </div>
-            </a>
+        <?php if ($guide_id || $android_url) : ?>
+        <div class="mv-footer-features">
+            <?php if ($guide_id) : ?>
+                <a class="mv-footer-guide" href="<?php echo esc_url(get_permalink($guide_id)); ?>" aria-label="خواندن راهنمای خرید">
+                    <div class="mv-footer-guide-copy">
+                        <strong>راهنمای خرید</strong>
+                        <?php if ($guide['intro'] !== '') : ?><span class="mv-footer-guide-intro"><?php echo esc_html(wp_trim_words($guide['intro'], 18)); ?></span><?php endif; ?>
+                        <span class="mv-footer-guide-action">خواندن راهنما <?php mv_icon('arrow'); ?></span>
+                    </div>
+                    <div class="mv-footer-guide-image" aria-hidden="true">
+                        <?php mv_support_cover('guides', $guide_id, (int) $guide['image'], true); ?>
+                    </div>
+                </a>
+            <?php endif; ?>
+            <?php if ($android_url) : ?>
+                <a class="mv-footer-app-download" href="<?php echo $android_url; ?>">
+                    <span class="mv-footer-app-icon">
+                        <img src="<?php echo esc_url(get_theme_file_uri('assets/android-robot.svg')); ?>" width="56" height="44" alt="" loading="lazy" decoding="async">
+                    </span>
+                    <span class="mv-footer-app-copy">
+                        <strong>اپ معلم ورزش</strong>
+                        <span>نسخهٔ آزمایشی اندروید™</span>
+                    </span>
+                    <span class="mv-footer-app-action">دانلود فایل نصب <bdi>APK</bdi>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4"/></svg>
+                    </span>
+                </a>
+            <?php endif; ?>
+        </div>
         <?php endif; ?>
         <div class="footer-grid">
             <div class="mv-footer-brand">
@@ -77,6 +96,9 @@ $public_phone = function_exists('mv_commerce_public_contact_phone') ? mv_commerc
                 <?php endforeach; ?>
             </nav>
         </div>
+        <?php if ($android_url) : ?>
+            <small class="mv-footer-app-credit">اندروید نشان تجاری گوگل است. نشان ربات با اقتباس از اثر گوگل و تحت <a href="https://creativecommons.org/licenses/by/3.0/deed.fa">مجوز کریتیو کامنز ۳.۰</a> استفاده شده است.</small>
+        <?php endif; ?>
     </div>
 </footer>
 <?php get_template_part('template-parts/social-links'); ?>

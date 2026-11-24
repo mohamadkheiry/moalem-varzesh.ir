@@ -375,6 +375,7 @@
 }
 .mv-product-page .woocommerce-Tabs-panel--description :is(img, video, iframe) { max-width: 100%; }
 .mv-product-page .woocommerce-Tabs-panel--description a { color: var(--green); font-weight: 700; }
+.mv-product-page .woocommerce-tabs .woocommerce-Tabs-panel--reviews { max-width: none; }
 .mv-product-page .woocommerce-noreviews {
     padding: .7rem .9rem;
     border-radius: .6rem;
@@ -406,7 +407,16 @@
     font: inherit;
 }
 .mv-product-page #review_form .comment-form textarea { min-height: 7rem; resize: vertical; }
-.mv-product-page #review_form .comment-form .stars a { min-width: 2.75rem; min-height: 2.75rem; vertical-align: middle; }
+.mv-product-page #review_form .comment-form .stars > span {
+    display: inline-flex;
+    flex-wrap: wrap;
+    max-width: 100%;
+}
+.mv-product-page #review_form .comment-form .stars a {
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: 0;
+}
 .mv-product-page #review_form .comment-form .stars a::before { inset: .6rem; }
 .mv-product-page #review_form #respond .form-submit input#submit {
     min-height: 2.75rem;
@@ -421,6 +431,35 @@
     padding-block-start: 1rem;
     border-block-start: 1px solid var(--product-line);
 }
+.mv-product-page .mv-related-guides { margin: 0; }
+.mv-product-page .mv-related-guides h2 {
+    margin: 0 0 .8rem;
+    font-size: clamp(1.15rem, 2vw, 1.55rem);
+}
+.mv-product-page .mv-related-guides ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: .6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.mv-product-page .mv-related-guides li { display: grid; min-width: 0; }
+.mv-product-page .mv-related-guides a {
+    display: flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: .55rem .75rem;
+    border: 1px solid var(--product-line);
+    border-inline-start: .2rem solid var(--green);
+    border-radius: .6rem;
+    background: var(--product-panel);
+    color: var(--green);
+    font-size: .91rem;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+.mv-product-page .mv-related-guides a:hover { background: var(--product-track); }
 .mv-specs, .mv-spec-row dd, .mv-spec-row dd p { margin: 0; }
 .mv-specs {
     display: grid;
@@ -496,6 +535,12 @@
         gap: 1.35rem clamp(1.2rem, 3vw, 2.7rem);
     }
     .mv-product-page.woocommerce div.product.type-product > div.images { margin: 0; }
+    .mv-product-page #reviews:has(#review_form_wrapper) {
+        display: grid;
+        grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr);
+        align-items: start;
+        gap: 1rem 1.45rem;
+    }
 }
 @media (min-width: 76rem) {
     .mv-product-page.woocommerce div.product .product_title { font-size: clamp(1.65rem, 2.3vw, 2.5rem); }

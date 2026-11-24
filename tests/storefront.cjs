@@ -1242,6 +1242,12 @@ const cases = [
             await second.focus();
             await page.keyboard.press('Enter');
             await gallery.getByRole('button', { name: 'نمایش تصویر ۲', pressed: true }).waitFor();
+            await page.waitForFunction(() => {
+                const gallery = document.querySelector('.woocommerce-product-gallery');
+                const slide = gallery.querySelector('.flex-active-slide img');
+                const frame = gallery.querySelector('.flex-viewport');
+                return slide.naturalWidth > 0 && Math.abs(slide.getBoundingClientRect().left - frame.getBoundingClientRect().left) < 2;
+            });
 
             const purchase = product.getByRole('region', { name: 'گزینه‌های خرید' });
             const quantity = purchase.locator('input.qty');
@@ -1264,6 +1270,11 @@ const cases = [
             await page.keyboard.press('Enter');
             assert.equal(await reviews.getAttribute('aria-selected'), 'true');
             assert.ok(await product.locator('#reviews').isVisible());
+            const stars = product.locator('#reviews .stars a');
+            assert.equal(await stars.count(), 5);
+            assert.ok(await stars.evaluateAll(items => items.every(star => star.offsetTop === items[0].offsetTop)));
+            assert.ok(await product.getByRole('button', { name: 'ثبت دیدگاه' }).isVisible());
+            assert.ok(await product.locator('section.mv-related-guides a').count());
             assert.ok(await product.getByRole('heading', { name: 'کالاهای مرتبط' }).isVisible());
             assert.ok(await product.locator('section.related li.product').count());
             assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));

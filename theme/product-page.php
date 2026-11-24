@@ -132,6 +132,12 @@ add_filter('woocommerce_product_related_products_heading', static function (): s
     return 'کالاهای مرتبط';
 });
 
+add_filter('woocommerce_product_review_comment_form_args', static function (array $args): array {
+    $args['title_reply'] = 'دیدگاه خود را بنویسید';
+    $args['label_submit'] = 'ثبت دیدگاه';
+    return $args;
+});
+
 function mv_product_description_headings(string $html): string {
     if (!function_exists('is_product') || !is_product() || get_post_type() !== 'product' || stripos($html, '<h1') === false) {
         return $html;

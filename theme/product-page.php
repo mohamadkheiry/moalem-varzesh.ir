@@ -32,6 +32,7 @@ add_action('wp_enqueue_scripts', static function (): void {
     if (function_exists('is_product') && is_product()) {
         $version = wp_get_theme()->get('Version');
         wp_enqueue_style('mv-product-page', get_theme_file_uri('assets/product-page.css'), ['moalem-varzesh'], $version);
+        wp_enqueue_script('mv-product-page', get_theme_file_uri('assets/product-page.js'), ['wc-single-product'], $version, true);
         $product = wc_get_product(get_queried_object_id());
         if ($product && $product->is_type('variable')) {
             wp_enqueue_script('mv-variation-options', get_theme_file_uri('assets/variation-options.js'), ['wc-add-to-cart-variation'], $version, true);
@@ -80,18 +81,14 @@ add_action('woocommerce_single_product_summary', static function (): void {
     if (!$product instanceof WC_Product) {
         return;
     }
-    $categories = get_the_terms($product->get_id(), 'product_cat');
-    $category = is_array($categories) ? end($categories) : false;
-    $link = $category ? get_term_link($category) : false;
     $availability = $product->get_availability();
     $stock = trim(wp_strip_all_tags($availability['availability']));
     if ($stock === '') {
-        $stock = $product->is_type('variable') ? 'موجودی به انتخاب شما بستگی دارد' : 'موجود';
+        $stock = $product->is_type('variable') ? 'موجودی پس از انتخاب گزینه مشخص می‌شود' : 'آمادهٔ سفارش';
     }
     ?>
     <div class="mv-product-context">
-        <?php if (is_string($link)) : ?><a href="<?php echo esc_url($link); ?>"><?php echo esc_html($category->name); ?></a><?php endif; ?>
-        <span class="mv-product-stock <?php echo esc_attr($availability['class']); ?>"><?php echo esc_html($stock); ?></span>
+        <span class="mv-product-stock <?php echo esc_attr($availability['class']); ?>" aria-live="polite" aria-atomic="true"><?php echo esc_html($stock); ?></span>
     </div>
     <?php
 }, 3);
@@ -107,13 +104,47 @@ add_action('woocommerce_single_product_summary', static function (): void {
 }, 29);
 add_action('woocommerce_single_product_summary', static function (): void {
     echo '</div>';
-    if ($contact = mv_support_page_id('contact')) {
-        printf('<a class="mv-product-help" href="%s">پرسش دربارهٔ کالا', esc_url(get_permalink($contact)));
-        mv_icon('chat');
-        echo '</a>';
+    $help_links = [
+        'contact' => ['پرسش دربارهٔ کالا', 'chat'],
+        'returns' => ['شرایط مرجوعی', 'arrow'],
+    ];
+    $has_help = false;
+    foreach ($help_links as $key => [$label, $icon]) {
+        $page = mv_support_page_id($key);
+        if (!$page) {
+            continue;
+        }
+        if (!$has_help) {
+            echo '<div class="mv-product-help-links">';
+            $has_help = true;
+        }
+        printf('<a class="mv-product-help" href="%s">', esc_url(get_permalink($page)));
+        mv_icon($icon);
+        echo esc_html($label) . '</a>';
+    }
+    if ($has_help) {
+        echo '</div>';
     }
     echo '</div>';
 }, 31);
+
+add_filter('woocommerce_product_related_products_heading', static function (): string {
+    return 'کالاهای مرتبط';
+});
+
+function mv_product_description_headings(string $html): string {
+    if (!function_exists('is_product') || !is_product() || get_post_type() !== 'product' || stripos($html, '<h1') === false) {
+        return $html;
+    }
+    $parts = wp_html_split($html);
+    for ($index = 1; $index < count($parts); $index += 2) {
+        $parts[$index] = preg_replace('~^(</?)h1(?=[\s>])~i', '$1h3', $parts[$index]);
+    }
+    return implode('', $parts);
+}
+
+add_filter('the_content', 'mv_product_description_headings', 21);
+add_filter('woocommerce_short_description', 'mv_product_description_headings', 21);
 
 add_filter('woocommerce_product_tabs', static function (array $tabs): array {
     foreach (['description' => 'معرفی کالا', 'additional_information' => 'مشخصات', 'reviews' => 'دیدگاه‌ها'] as $key => $title) {

@@ -182,8 +182,11 @@ const cases = [
         assert.ok(await product.locator('.mv-product-stock').isVisible());
         assert.ok(await product.locator('.mv-product-buy form.cart').isVisible());
         const columns = await product.locator('.images, .mv-product-info, .mv-product-purchase').evaluateAll(elements =>
-            elements.map(element => element.getBoundingClientRect().x));
-        assert.ok(columns[0] > columns[1] && columns[1] > columns[2]);
+            elements.map(element => {
+                const { x, y } = element.getBoundingClientRect();
+                return { x, y };
+            }));
+        assert.ok(columns[0].x > columns[1].x && columns[1].x === columns[2].x && columns[1].y < columns[2].y);
         assert.match(await product.getByRole('link', { name: 'پرسش دربارهٔ کالا' }).getAttribute('href'), /\/contact-us\/$/);
         await page.locator('.woocommerce-product-gallery__image img').first().evaluate(img => img.decode());
         const image = await page.locator('.woocommerce-product-gallery__image img').first().getAttribute('src');
@@ -1222,6 +1225,49 @@ const cases = [
             assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
             await custom.click();
             await purchase.screenshot({ path: resolve(evidence, 'product-options-' + design + '.png') });
+        }
+    }],
+    ['33', 'چیدمان محصول، گالری، تعداد، دیدگاه‌ها و پیوندهای راهنما در هر دو طرح', async page => {
+        for (const [design, width] of [['primary', 1440], ['secondary', 320]]) {
+            await page.setViewportSize({ width, height: 940 });
+            await go(page, pathOf(socks) + '?mv_design=' + design);
+            const product = page.locator('main.mv-product-page');
+            assert.equal(await product.locator('h1').innerText(), socks.name);
+            assert.ok(await product.locator('.woocommerce-breadcrumb a').count());
+
+            const gallery = product.locator('.woocommerce-product-gallery');
+            await gallery.getByRole('button', { name: 'نمایش تصویر ۱', pressed: true }).waitFor();
+            const second = gallery.getByRole('button', { name: 'نمایش تصویر ۲' });
+            assert.ok((await second.boundingBox()).height >= 44);
+            await second.focus();
+            await page.keyboard.press('Enter');
+            await gallery.getByRole('button', { name: 'نمایش تصویر ۲', pressed: true }).waitFor();
+
+            const purchase = product.getByRole('region', { name: 'گزینه‌های خرید' });
+            const quantity = purchase.locator('input.qty');
+            const subtract = purchase.getByRole('button', { name: 'کاهش تعداد' });
+            const add = purchase.getByRole('button', { name: 'افزایش تعداد' });
+            assert.ok(await subtract.isDisabled());
+            await add.click();
+            assert.equal(await quantity.inputValue(), '2');
+            await subtract.click();
+            assert.equal(await quantity.inputValue(), '1');
+            assert.ok(await subtract.isDisabled());
+            for (const [name, route] of [['پرسش دربارهٔ کالا', '/contact-us/'], ['شرایط مرجوعی', '/refund_returns-2/']]) {
+                assert.equal(new URL(await purchase.getByRole('link', { name, exact: true }).getAttribute('href')).pathname, route);
+            }
+
+            const tabs = product.getByRole('tablist');
+            const reviews = tabs.getByRole('tab', { name: 'دیدگاه‌ها' });
+            await tabs.locator('[aria-selected="true"]').focus();
+            await page.keyboard.press('End');
+            await page.keyboard.press('Enter');
+            assert.equal(await reviews.getAttribute('aria-selected'), 'true');
+            assert.ok(await product.locator('#reviews').isVisible());
+            assert.ok(await product.getByRole('heading', { name: 'کالاهای مرتبط' }).isVisible());
+            assert.ok(await product.locator('section.related li.product').count());
+            assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            await product.screenshot({ path: resolve(evidence, 'product-page-' + design + '.png') });
         }
     }],
 ];

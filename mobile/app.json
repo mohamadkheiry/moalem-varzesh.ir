@@ -2,13 +2,14 @@
   "expo": {
     "name": "معلم ورزش",
     "slug": "moalem-varzesh",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "scheme": "moalemvarzesh",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
     "android": {
       "package": "ir.moalemvarzesh.store",
+      "versionCode": 2,
       "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#122820" }
     },
     "ios": { "bundleIdentifier": "ir.moalemvarzesh.store", "supportsTablet": true },

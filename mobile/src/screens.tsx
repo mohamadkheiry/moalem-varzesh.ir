@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  FlatList, Image, Keyboard, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View,
+  FlatList, Image, Keyboard, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions, View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   ArrowLeft, Check, ChevronDown, CreditCard, Heart, Minus, Plus, ShoppingBag, SlidersHorizontal, Trash2, Truck,
 } from './icons';
@@ -30,10 +29,12 @@ function ProductCard({ item, onOpen, saved, toggle }: { item: Product } & Browse
   return <View style={styles.productCard} testID={'product-card-' + item.id}>
     <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={() => onOpen(item)}
       testID={'product-open-' + item.id} style={({ pressed }) => [styles.productPressable, pressed && styles.cardPressed]}>
-      <Picture source={source ? { uri: source } : undefined} style={styles.productPhoto} fit="cover" />
+      <Picture source={source ? { uri: source } : undefined} style={styles.productPhoto} />
       <View style={styles.productBody}>
-        <Label weight="medium" size={13} numberOfLines={2} style={styles.productTitle}>{title}</Label>
-        <Label weight="bold" size={14} tone={color.green} numberOfLines={1}>{formatPrice(item.prices, true)}</Label>
+        <Label weight="medium" size={14} numberOfLines={2} style={styles.productTitle}>{title}</Label>
+        <View style={styles.productPrice}>
+          <Label weight="bold" size={15} tone={color.navy}>{formatPrice(item.prices, true)}</Label>
+        </View>
         {!item.is_in_stock && <Label size={12} tone={color.danger}>ناموجود</Label>}
       </View>
     </Pressable>
@@ -50,7 +51,8 @@ function CategoryTile({ category, catalog, onPress }: { category: Category; cata
   return <Pressable accessibilityRole="button" accessibilityLabel={textOf(category.name)} onPress={onPress}
     style={({ pressed }) => [styles.categoryTile, pressed && styles.cardPressed]} testID={'home-category-' + category.id}>
     <Picture source={photo ? { uri: photo } : undefined} style={styles.categoryPhoto} fit="cover" size={21} />
-    <Label size={11} weight="medium" style={shared.center} numberOfLines={2}>{textOf(category.name)}</Label>
+    <Label size={12} weight="bold" style={styles.categoryName} numberOfLines={2}>{textOf(category.name)}</Label>
+    <ArrowLeft size={14} color={color.blue} strokeWidth={1.9} />
   </Pressable>;
 }
 
@@ -58,20 +60,26 @@ export function HomeScreen({ catalog, query, setQuery, onShop, onCategory, submi
   catalog: Catalog | null; onShop: () => void; onCategory: (category: Category) => void;
   submitSearch: () => void; refreshing: boolean; refresh: () => void;
 }) {
+  const { width } = useWindowDimensions();
   return <ScrollView testID="home-screen" contentContainerStyle={shared.content} keyboardShouldPersistTaps="handled"
-    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={color.green} />}>
-    <SearchField value={query} onChange={setQuery} onSubmit={submitSearch} />
+    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={color.blue} />}>
+    <View style={styles.homeSearch}><SearchField value={query} onChange={setQuery} onSubmit={submitSearch} /></View>
     <View style={styles.hero}>
-      <Image source={require('../assets/hero-app.webp')} resizeMode="cover" style={styles.heroPhoto} />
-      <LinearGradient colors={['transparent', '#0C2119']} locations={[0.4, 1]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={StyleSheet.absoluteFill} />
-      <View style={styles.heroCopy}>
-        <Label size={25} weight="bold" tone={color.white} accessibilityRole="header">لباس و{'\n'}تجهیزات ورزشی</Label>
-        <Action title="مشاهده فروشگاه" testID="hero-shop" onPress={onShop} style={styles.heroAction} />
+      <View style={styles.heroMedia}>
+        <Image source={require('../assets/hero-app-court.webp')} resizeMode="cover" style={styles.heroPhoto} />
+        <View style={styles.heroCopy}>
+          <Label size={width < 360 ? 22 : 28} weight="bold" tone={color.white} accessibilityRole="header">لباس و{'\n'}تجهیزات ورزشی</Label>
+        </View>
       </View>
+      <Pressable onPress={onShop} accessibilityRole="button" testID="hero-shop"
+        style={({ pressed }) => [styles.heroAction, pressed && styles.cardPressed]}>
+        <Label size={15} weight="bold" tone={color.navy}>مشاهده فروشگاه</Label>
+        <View style={styles.heroArrow}><ArrowLeft size={21} color={color.navy} strokeWidth={2} /></View>
+      </Pressable>
     </View>
     {catalog && <>
       <SectionTitle title="دسته‌بندی کالاها" />
-      <View style={styles.categoryRow}>
+      <View style={styles.categoryGrid}>
         {featuredCategories(catalog.categories).map(category =>
           <CategoryTile key={category.id} category={category} catalog={catalog} onPress={() => onCategory(category)} />)}
       </View>
@@ -95,7 +103,7 @@ function SortSheet({ open, selection, onClose, onSelect }: { open: boolean; sele
           accessibilityState={{ selected: selection === value }} testID={'sort-' + value}
           style={({ pressed }) => [styles.sheetOption, pressed && styles.cardPressed]} onPress={() => onSelect(value)}>
           <Label size={15} weight="medium">{label}</Label>
-          {selection === value && <Check size={20} color={color.green} />}
+          {selection === value && <Check size={20} color={color.blue} />}
         </Pressable>)}
       </View>
     </View>
@@ -115,7 +123,7 @@ export function ShopScreen({ catalog, query, setQuery, category, setCategory, re
       data={results} keyExtractor={item => String(item.id)} numColumns={2}
       contentContainerStyle={shared.content} columnWrapperStyle={styles.column}
       renderItem={({ item }) => <ProductCard item={item} {...browse} />}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={color.green} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={color.blue} />}
       ListHeaderComponent={<>
         <Label accessibilityRole="header" size={25} weight="bold" style={styles.pageHeading}>فروشگاه</Label>
         <SearchField value={query} onChange={setQuery} onSubmit={Keyboard.dismiss} />
@@ -128,7 +136,7 @@ export function ShopScreen({ catalog, query, setQuery, category, setCategory, re
         <View style={styles.shopTools}>
           <Label size={12} tone={color.muted} testID="result-count">{persian.format(results.length)} کالا</Label>
           <Pressable accessibilityRole="button" accessibilityLabel="مرتب‌سازی" testID="sort-open" onPress={() => setOpen(true)} style={styles.sortButton}>
-            <SlidersHorizontal size={16} color={color.green} />
+            <SlidersHorizontal size={16} color={color.blue} />
             <Label weight="medium" size={12}>{sortOptions.find(([value]) => value === sort)?.[1]}</Label>
             <ChevronDown size={14} color={color.muted} />
           </Pressable>
@@ -237,8 +245,10 @@ export function ProductScreen({ item, saved, toggle, busy, onAdd }: { item: Prod
         </Pressable>)}
       </ScrollView>}
       <View style={styles.detailText}>
-        <Label accessibilityRole="header" size={21} weight="bold">{title}</Label>
-        <Label tone={color.green} weight="bold" size={20} testID="detail-price">{formatPrice(chosen?.prices ?? product.prices)}</Label>
+        <Label accessibilityRole="header" size={23} weight="bold">{title}</Label>
+        <View style={styles.detailPrice}>
+          <Label tone={color.navy} weight="bold" size={21} testID="detail-price">{formatPrice(chosen?.prices ?? product.prices)}</Label>
+        </View>
       </View>
       {!product.is_in_stock && <Label tone={color.danger} weight="medium">این کالا فعلاً ناموجود است.</Label>}
       {!!error && <StatePanel title={error} action="تلاش دوباره" onPress={() => setAttempt(value => value + 1)} />}
@@ -271,7 +281,7 @@ export function ProductScreen({ item, saved, toggle, busy, onAdd }: { item: Prod
         <Label weight="bold" size={16}>دربارهٔ کالا</Label>
         <Label size={14} tone={color.muted} numberOfLines={expanded ? undefined : 5}>{description}</Label>
         {description.length > 220 && <Pressable accessibilityRole="button" onPress={() => setExpanded(old => !old)} style={styles.descriptionLink}>
-          <Label weight="medium" tone={color.green}>{expanded ? 'نمایش کمتر' : 'ادامهٔ توضیحات'}</Label>
+          <Label weight="medium" tone={color.blue}>{expanded ? 'نمایش کمتر' : 'ادامهٔ توضیحات'}</Label>
         </Pressable>}
       </View>}
     </ScrollView>
@@ -291,7 +301,7 @@ function CartSummary({ cart }: { cart: Cart }) {
   return <View style={[shared.card, styles.summary]}>
     <Label weight="bold" size={17}>خلاصهٔ سفارش</Label>
     <Line label="مبلغ کالاها"><Label size={14} weight="medium">{formatMoney(totals.total_items, totals)}</Label></Line>
-    {Number(totals.total_discount) > 0 && <Line label="تخفیف"><Label size={14} tone={color.green}>{formatMoney(totals.total_discount, totals)}</Label></Line>}
+    {Number(totals.total_discount) > 0 && <Line label="تخفیف"><Label size={14} tone={color.blue}>{formatMoney(totals.total_discount, totals)}</Label></Line>}
     {cart.needs_shipping && <Line label="هزینهٔ ارسال"><Label size={12} tone={color.muted}>
       {cart.has_calculated_shipping ? formatMoney(totals.total_shipping, totals) : 'محاسبه در تسویه‌حساب'}
     </Label></Line>}
@@ -307,8 +317,8 @@ export function CartScreen({ cart, busy, error, refresh, onShop, onReview, onCha
 }) {
   return <View style={styles.fill} testID="cart-screen">
     <ScrollView contentContainerStyle={shared.content}
-      refreshControl={<RefreshControl refreshing={busy && !cart} onRefresh={refresh} tintColor={color.green} />}>
-      <Label accessibilityRole="header" size={25} weight="bold" style={styles.pageHeading}>سبد خرید</Label>
+      refreshControl={<RefreshControl refreshing={busy && !cart} onRefresh={refresh} tintColor={color.blue} />}>
+      <Label accessibilityRole="header" size={27} weight="bold" style={styles.pageHeading}>سبد خرید</Label>
       {!!error && <Label tone={color.danger} accessibilityLiveRegion="polite" style={styles.cartError}>{error}</Label>}
       {cart?.items.length ? <>
         <Label size={13} tone={color.muted} style={styles.cartCount}>{persian.format(cart.items_count)} کالا در سبد شما</Label>
@@ -323,7 +333,7 @@ export function CartScreen({ cart, busy, error, refresh, onShop, onReview, onCha
               </View>
               {item.variation.map(option => <Label size={12} tone={color.muted} key={option.attribute}>{textOf(option.attribute)} · {textOf(option.value)}</Label>)}
               {item.item_data?.map((option, index) => <Label size={12} tone={color.muted} key={option.key + index}>{textOf(option.key)} · {textOf(option.value)}</Label>)}
-              <Label weight="bold" tone={color.green}>{formatMoney(item.totals.line_total, item.totals)}</Label>
+              <Label weight="bold" tone={color.blue}>{formatMoney(item.totals.line_total, item.totals)}</Label>
               {item.quantity_limits.editable && <Stepper value={item.quantity} minimum={item.quantity_limits.minimum}
                 maximum={item.quantity_limits.maximum} step={item.quantity_limits.multiple_of}
                 disabled={busy} testID="cart-quantity" onChange={value => onChange(item.key, value)} />}
@@ -347,11 +357,11 @@ export function ReviewScreen({ cart, busy, error, onCheckout }: { cart: Cart; bu
       <Label accessibilityRole="header" size={25} weight="bold" style={styles.pageHeading}>تسویه‌حساب</Label>
       <CartSummary cart={cart} />
       <View style={[shared.card, styles.reviewInfo]}>
-        <View style={styles.reviewHeading}><Truck size={22} color={color.green} /><Label weight="bold" size={16}>ارسال سفارش</Label></View>
+        <View style={styles.reviewHeading}><Truck size={22} color={color.blue} /><Label weight="bold" size={16}>ارسال سفارش</Label></View>
         <Label size={13} tone={color.muted}>نشانی و روش ارسال را در تسویه‌حساب فروشگاه وارد کنید.</Label>
       </View>
       <View style={[shared.card, styles.reviewInfo]}>
-        <View style={styles.reviewHeading}><CreditCard size={22} color={color.green} /><Label weight="bold" size={16}>روش پرداخت</Label></View>
+        <View style={styles.reviewHeading}><CreditCard size={22} color={color.blue} /><Label weight="bold" size={16}>روش پرداخت</Label></View>
         <Label size={13} tone={color.muted}>روش‌های پرداخت در صفحهٔ فروشگاه بر اساس سفارش شما نمایش داده می‌شوند.</Label>
       </View>
       {!!error && <Label tone={color.danger} accessibilityLiveRegion="polite">{error}</Label>}
@@ -362,59 +372,72 @@ export function ReviewScreen({ cart, busy, error, onCheckout }: { cart: Cart; bu
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  hero: { height: 220, position: 'relative', borderRadius: 19, backgroundColor: color.forest, overflow: 'hidden',
-    marginTop: 14, marginBottom: 18, justifyContent: 'center', alignItems: 'flex-end' },
+  homeSearch: { marginTop: 14 },
+  hero: { borderRadius: 16, backgroundColor: color.white, overflow: 'hidden',
+    borderWidth: 1, borderColor: color.line, marginTop: 16, marginBottom: 19 },
+  heroMedia: { aspectRatio: 1.55, position: 'relative', backgroundColor: color.navy,
+    justifyContent: 'center', alignItems: 'flex-end' },
   heroPhoto: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
-  heroCopy: { paddingRight: 14, paddingLeft: 5, alignItems: 'flex-end', width: '56%', gap: 12 },
-  heroAction: { paddingHorizontal: 10, minHeight: 44 },
-  categoryRow: { flexDirection: 'row-reverse', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 },
-  categoryTile: { width: '23.4%', gap: 5, minHeight: 92, borderRadius: 13 },
-  categoryPhoto: { aspectRatio: 1, borderRadius: 12 },
+  heroCopy: { paddingRight: 15, paddingLeft: 5, alignItems: 'flex-end', width: '54%' },
+  heroAction: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center',
+    minHeight: 57, paddingHorizontal: 12, paddingVertical: 7 },
+  heroArrow: { width: 36, height: 36, borderRadius: 10, backgroundColor: color.accent,
+    alignItems: 'center', justifyContent: 'center' },
+  categoryGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'space-between',
+    rowGap: 8, marginBottom: 22 },
+  categoryTile: { width: '48.6%', minHeight: 64, padding: 6, borderRadius: 12, borderColor: color.line,
+    borderWidth: 1, backgroundColor: color.white, gap: 6, flexDirection: 'row-reverse', alignItems: 'center' },
+  categoryPhoto: { width: 42, height: 48, borderRadius: 8 },
+  categoryName: { flex: 1, minWidth: 0 },
   homeGrid: { flexDirection: 'row-reverse', flexWrap: 'wrap', justifyContent: 'space-between' },
-  productCard: { width: '48.4%', marginBottom: 11, borderWidth: 1, borderColor: color.line, borderRadius: 16,
+  productCard: { width: '48.5%', marginBottom: 12, borderWidth: 1, borderColor: color.line, borderRadius: 14,
     backgroundColor: color.white, overflow: 'hidden' },
   productPressable: { flex: 1 },
   cardPressed: { backgroundColor: color.soft },
-  productPhoto: { aspectRatio: 1, borderRadius: 13, margin: 4 },
-  productBody: { paddingHorizontal: 8, paddingTop: 3, paddingBottom: 10, gap: 3 },
-  productTitle: { minHeight: 39 },
+  productPhoto: { aspectRatio: 1.06, backgroundColor: color.soft },
+  productBody: { paddingHorizontal: 10, paddingVertical: 9, gap: 6 },
+  productTitle: { minHeight: 44 },
+  productPrice: { borderTopWidth: 1, borderTopColor: color.line, paddingTop: 6 },
   favorite: { position: 'absolute', top: 7, left: 7 },
   column: { flexDirection: 'row-reverse', justifyContent: 'space-between' },
-  pageHeading: { marginTop: 5, marginBottom: 12 },
-  chipScroller: { marginTop: 12, marginBottom: 7, direction: 'rtl' },
+  pageHeading: { marginTop: 15, marginBottom: 12 },
+  chipScroller: { marginTop: 12, marginBottom: 8, direction: 'rtl' },
   chipContent: { gap: 7 },
-  shopTools: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  sortButton: { flexDirection: 'row-reverse', gap: 6, alignItems: 'center', minHeight: 44, paddingHorizontal: 10 },
-  sheetMask: { flex: 1, justifyContent: 'flex-end', alignItems: 'center', backgroundColor: '#14282166' },
+  shopTools: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sortButton: { flexDirection: 'row-reverse', gap: 6, alignItems: 'center', minHeight: 44,
+    paddingHorizontal: 10, borderRadius: 9, backgroundColor: color.soft },
+  sheetMask: { flex: 1, justifyContent: 'flex-end', alignItems: 'center', backgroundColor: '#122A4866' },
   sheet: { width: '100%', maxWidth: 540, padding: 18, paddingBottom: 28, backgroundColor: color.white,
     borderTopLeftRadius: 23, borderTopRightRadius: 23, gap: 5 },
   sheetOption: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', minHeight: 48,
     borderBottomColor: color.line, borderBottomWidth: 1, paddingHorizontal: 8 },
-  detailImageWrap: { marginTop: 6 },
-  detailImage: { aspectRatio: 1.18, borderRadius: 17, backgroundColor: color.white, borderWidth: 1, borderColor: color.line },
+  detailImageWrap: { marginTop: 13 },
+  detailImage: { aspectRatio: 1.24, borderRadius: 15, backgroundColor: color.soft },
   thumbnails: { marginTop: 9, direction: 'rtl' },
   thumbRow: { gap: 6 },
   thumbnail: { height: 53, width: 53, padding: 2, borderRadius: 10, borderWidth: 1, borderColor: color.line, backgroundColor: color.white },
-  thumbnailActive: { borderColor: color.green, borderWidth: 2 },
+  thumbnailActive: { borderColor: color.blue, borderWidth: 2 },
   thumbnailPicture: { flex: 1, borderRadius: 7, backgroundColor: color.white },
-  detailText: { gap: 3, marginTop: 13, paddingBottom: 11, borderBottomColor: color.line, borderBottomWidth: 1 },
-  group: { marginTop: 13, gap: 7 },
+  detailText: { gap: 9, marginTop: 17, paddingBottom: 13, borderBottomColor: color.line, borderBottomWidth: 1 },
+  detailPrice: { paddingVertical: 7, paddingHorizontal: 11, borderRadius: 9,
+    alignSelf: 'flex-end', backgroundColor: color.accentSoft },
+  group: { marginTop: 17, gap: 8 },
   optionRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 6 },
   print: { padding: 13, gap: 6, marginTop: 14 },
   description: { marginTop: 15, gap: 7, paddingTop: 13, borderTopColor: color.line, borderTopWidth: 1 },
   descriptionLink: { minHeight: 44, justifyContent: 'center' },
-  purchase: { paddingHorizontal: 14, paddingVertical: 10, borderTopColor: color.line, borderTopWidth: 1, backgroundColor: color.white, gap: 5 },
+  purchase: { paddingHorizontal: 18, paddingVertical: 10, borderTopColor: color.line, borderTopWidth: 1, backgroundColor: color.white, gap: 6 },
   purchaseRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
   stepper: { flexDirection: 'row-reverse', alignItems: 'center', alignSelf: 'flex-end', gap: 3 },
   quantityNumber: { minWidth: 22, textAlign: 'center' },
   cartCount: { marginBottom: 10, marginTop: -7 },
-  cartItem: { flexDirection: 'row-reverse', gap: 9, padding: 8, marginBottom: 9, alignItems: 'flex-start' },
-  cartPhoto: { width: 76, height: 86, borderRadius: 10 },
-  cartInfo: { flex: 1, gap: 4 },
+  cartItem: { flexDirection: 'row-reverse', gap: 11, padding: 11, marginBottom: 10, alignItems: 'flex-start' },
+  cartPhoto: { width: 79, height: 93, borderRadius: 10 },
+  cartInfo: { flex: 1, minWidth: 0, gap: 5 },
   itemHead: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: 7 },
   cartError: { marginBottom: 10 },
-  summary: { padding: 13, gap: 3, marginBottom: 10 },
-  total: { backgroundColor: color.limeLight, borderRadius: 10, paddingHorizontal: 9, marginTop: 3 },
+  summary: { padding: 14, gap: 4, marginBottom: 11 },
+  total: { backgroundColor: color.accentSoft, borderRadius: 9, paddingHorizontal: 10, marginTop: 7 },
   reviewInfo: { padding: 13, marginBottom: 9, gap: 6 },
   reviewHeading: { flexDirection: 'row-reverse', alignItems: 'center', gap: 7 },
 });

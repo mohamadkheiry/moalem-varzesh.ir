@@ -68,7 +68,8 @@ jobs:
       - name: Verify the APK
         run: |
           mkdir -p delivery
-          apk=delivery/moalem-varzesh-android-1.0.0-preview.apk
+          version=$(node -p "require('./app.json').expo.version")
+          apk="delivery/moalem-varzesh-android-$version-preview.apk"
           cp android/app/build/outputs/apk/release/app-release.apk "$apk"
           "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose "$apk"
           "$ANDROID_HOME/build-tools/37.0.0/aapt" dump badging "$apk" | grep -F "name='ir.moalemvarzesh.store.preview'"

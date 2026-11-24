@@ -24,8 +24,8 @@ function ClubMark({ dark }: { dark: boolean }) {
   return <View style={[styles.mark, dark && styles.markDark]}>
     <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
       <Path d="M4 17c4.5-7.4 9-10.3 15-10.7M7 20l6.3-5.8h5l-3 4.2M4 10l4.7-3.2 5 .8"
-        stroke={color.lime} strokeWidth={1.85} strokeLinecap="round" strokeLinejoin="round" />
-      <Circle cx="17" cy="3.7" r="1.5" fill={color.lime} />
+        stroke={color.accent} strokeWidth={1.85} strokeLinecap="round" strokeLinejoin="round" />
+      <Circle cx="17" cy="3.7" r="1.5" fill={color.accent} />
     </Svg>
   </View>;
 }
@@ -51,8 +51,8 @@ function Tabs({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
       const selected = tab === id;
       return <Pressable key={id} accessibilityRole="tab" accessibilityState={{ selected }} testID={'tab-' + id}
         onPress={() => onChange(id)} style={({ pressed }) => [styles.tab, selected && styles.tabSelected, pressed && !selected && styles.tabPressed]}>
-        <Icon size={21} color={selected ? color.lime : color.ink} strokeWidth={1.85} />
-        <Label size={10} weight={selected ? 'bold' : 'medium'} tone={selected ? color.lime : color.ink} style={shared.center}>{label}</Label>
+        <Icon size={22} color={selected ? color.navy : color.muted} strokeWidth={selected ? 2.1 : 1.75} />
+        <Label size={11} weight={selected ? 'bold' : 'medium'} tone={selected ? color.navy : color.muted} style={shared.center}>{label}</Label>
       </Pressable>;
     })}
   </View>;
@@ -214,7 +214,7 @@ function Storefront() {
         onAccount={() => { void openSite(storeOrigin + '/my-account/').catch(() => setNotice('حساب کاربری باز نشد.')); }} />
       <SafeAreaView style={styles.body} edges={['bottom']}>
         {offline && <Pressable style={styles.offline} accessibilityRole="button" onPress={() => void refresh()}>
-          <Label tone={color.green} size={12}>در حال نمایش فهرست ذخیره‌شده · تلاش دوباره</Label>
+          <Label tone={color.blue} size={12}>در حال نمایش فهرست ذخیره‌شده · تلاش دوباره</Label>
         </Pressable>}
         {reviewing && cart ? <ReviewScreen cart={cart} busy={cartBusy} error={cartError} onCheckout={() => void onCheckout()} />
           : item ? <ProductScreen key={item.id} item={item} saved={saved} toggle={toggle} busy={cartBusy}
@@ -246,27 +246,28 @@ export default function App() {
     VazirMedium: require('../assets/Vazirmatn-SemiBold.ttf'),
     VazirBold: require('../assets/Vazirmatn-ExtraBold.ttf'),
   });
-  if (!loaded && !error) return <View style={styles.launch}><ActivityIndicator color={color.green} /></View>;
+  if (!loaded && !error) return <View style={styles.launch}><ActivityIndicator color={color.blue} /></View>;
   return <SafeAreaProvider><Storefront /></SafeAreaProvider>;
 }
 
 const styles = StyleSheet.create({
-  stage: { flex: 1, alignItems: 'center', backgroundColor: '#E9EEE8', direction: 'ltr' },
-  shell: { flex: 1, width: '100%', maxWidth: 540, backgroundColor: color.paper },
+  stage: { flex: 1, alignItems: 'center', backgroundColor: '#E4EAF2', direction: 'ltr' },
+  shell: { flex: 1, width: '100%', maxWidth: 560, backgroundColor: color.white },
   body: { flex: 1, backgroundColor: color.paper },
-  header: { minHeight: 62, paddingHorizontal: 15, paddingVertical: 7, gap: 8,
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', backgroundColor: color.paper },
-  headerDark: { backgroundColor: color.forest },
+  header: { minHeight: 70, paddingHorizontal: 18, paddingVertical: 8, gap: 8, borderBottomWidth: 1,
+    borderBottomColor: color.line, flexDirection: 'row-reverse', alignItems: 'center',
+    justifyContent: 'space-between', backgroundColor: color.white },
+  headerDark: { backgroundColor: color.navy },
   brand: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8 },
   headerActions: { flexDirection: 'row-reverse', alignItems: 'center', gap: 5 },
-  mark: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', backgroundColor: color.forest, borderRadius: 12 },
-  markDark: { backgroundColor: '#20382E' },
-  tabs: { minHeight: 65, paddingHorizontal: 12, paddingVertical: 6, borderTopColor: color.line,
-    borderTopWidth: 1, flexDirection: 'row-reverse', gap: 5, backgroundColor: color.white },
-  tab: { minHeight: 50, borderRadius: 13, alignItems: 'center', justifyContent: 'center', flex: 1, gap: 2 },
-  tabSelected: { backgroundColor: color.forest },
+  mark: { width: 43, height: 43, alignItems: 'center', justifyContent: 'center', backgroundColor: color.navy, borderRadius: 11 },
+  markDark: { backgroundColor: color.blue },
+  tabs: { minHeight: 66, paddingHorizontal: 10, paddingVertical: 5, borderTopColor: color.line,
+    borderTopWidth: 1, flexDirection: 'row-reverse', gap: 4, backgroundColor: color.white },
+  tab: { minHeight: 53, borderRadius: 11, alignItems: 'center', justifyContent: 'center', flex: 1, minWidth: 0, gap: 3 },
+  tabSelected: { backgroundColor: color.accentSoft },
   tabPressed: { backgroundColor: color.soft },
-  offline: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: color.limeLight },
-  notice: { position: 'absolute', left: 16, right: 16, bottom: 71, padding: 10, borderRadius: 13, backgroundColor: color.forest },
+  offline: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: color.accentSoft },
+  notice: { position: 'absolute', left: 16, right: 16, bottom: 71, padding: 10, borderRadius: 13, backgroundColor: color.navy },
   launch: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: color.paper },
 });

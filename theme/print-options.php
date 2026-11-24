@@ -36,7 +36,7 @@ add_action('woocommerce_before_add_to_cart_button', static function (): void {
     if (!$custom_options) {
         return;
     }
-    wp_enqueue_script('mv-print-options', get_theme_file_uri('assets/print-options.js'), [], wp_get_theme()->get('Version'), true);
+    wp_enqueue_script('mv-print-options', get_theme_file_uri('assets/print-options.js'), ['wc-add-to-cart-variation'], wp_get_theme()->get('Version'), true);
     ?>
     <fieldset class="mv-print-fields" data-mv-print-options="<?php echo esc_attr(wp_json_encode(array_values(array_unique($custom_options)))); ?>" hidden>
         <legend>نام و شمارهٔ روی لباس</legend>

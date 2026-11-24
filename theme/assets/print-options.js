@@ -1,3 +1,4 @@
+/* global jQuery */
 for (const fields of document.querySelectorAll('.mv-print-fields')) {
     const form = fields.closest('form.variations_form');
     if (!form) continue;
@@ -13,7 +14,6 @@ for (const fields of document.querySelectorAll('.mv-print-fields')) {
             input.required = custom;
         }
     };
-    for (const select of selections) select.addEventListener('change', update);
-    form.querySelector('.reset_variations')?.addEventListener('click', () => setTimeout(update, 0));
+    jQuery(form).on('woocommerce_variation_has_changed wc_variation_form', update);
     update();
 }

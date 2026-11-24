@@ -27,6 +27,14 @@ async function go(page, path, status = 200) {
     return response;
 }
 
+async function variationChoice(select, value) {
+    const label = await select.evaluate((element, expected) => {
+        return Array.from(element.options).find(option => option.value === expected)?.textContent;
+    }, value);
+    assert.ok(label, 'Expected a variation option for ' + value);
+    return select.locator('..').getByRole('radio', { name: label, exact: true });
+}
+
 async function putSimpleInCart(page) {
     await go(page, pathOf(socks));
     const form = page.locator('form.cart');
@@ -181,7 +189,7 @@ const cases = [
         const image = await page.locator('.woocommerce-product-gallery__image img').first().getAttribute('src');
         assert.equal(new URL(image).origin, base);
         const choice = page.locator('form.variations_form .variations select').first();
-        await choice.selectOption('6 (2XL) با نام و شماره دلخواه');
+        await (await variationChoice(choice, '6 (2XL) با نام و شماره دلخواه')).click();
         const form = page.locator('form.variations_form');
         await form.locator('.woocommerce-variation-price .amount').waitFor({ state: 'visible' });
         assert.ok(clean(await form.locator('.woocommerce-variation-price .amount').first().innerText()).includes('1490000'));
@@ -223,9 +231,21 @@ const cases = [
         assert.ok(Array.isArray(data));
         const unavailable = data.find(v => v.is_in_stock === false);
         assert.ok(unavailable, 'Expected at least one out-of-stock option in the variation payload');
+        await form.getByRole('radiogroup').first().waitFor();
+        let blocked = false;
         for (const [key, value] of Object.entries(unavailable.attributes)) {
-            if (value) await form.locator('select[name="' + key + '"]').selectOption(value);
+            if (!value) continue;
+            const select = form.locator('select[name="' + key + '"]');
+            const option = await variationChoice(select, value);
+            if (await option.isDisabled()) {
+                assert.equal(await option.getAttribute('aria-checked'), 'false');
+                assert.equal(await option.locator('.mv-variation-choice-status').innerText(), 'ناموجود');
+                blocked = true;
+                break;
+            }
+            await option.click();
         }
+        assert.ok(blocked, 'Expected WooCommerce to disable the out-of-stock choice');
         const add = form.locator('button.single_add_to_cart_button');
         assert.ok(await add.evaluate(e => e.classList.contains('wc-variation-is-unavailable') || e.classList.contains('disabled') || e.disabled));
         await go(page, '/missing-for-storefront-qa/', 404);
@@ -1073,7 +1093,7 @@ const cases = [
         assert.equal(await specs.getByRole('link', { name: 'انتخاب گزینهٔ خرید' }).getAttribute('href'), '#mv-product-options');
         const choices = page.locator('form.variations_form .variations select').first();
         assert.equal(await choices.locator('option[value="0"]').innerText(), 'سایز ۰');
-        await choices.selectOption('0');
+        await (await variationChoice(choices, '0')).click();
         await page.waitForFunction(() => Number(document.querySelector('input[name=variation_id]').value) > 0
             && !document.querySelector('.single_add_to_cart_button').classList.contains('disabled'));
         await go(page, pathOf(messi) + '?mv_design=secondary');
@@ -1096,12 +1116,12 @@ const cases = [
         const alias = await choices.locator('option').evaluateAll(options =>
             options.find(option => option.value.includes('اسم وشماره'))?.value);
         assert.ok(alias, 'Custom print alias is present in the actual imported product');
-        await choices.selectOption(alias);
+        await (await variationChoice(choices, alias)).click();
         assert.ok(await page.locator('#mv-print-name').isVisible());
         assert.equal(await page.locator('#mv-print-number').getAttribute('required'), '');
         const unprinted = await choices.locator('option').evaluateAll(options =>
             options.find(option => option.value.includes('بدون چاپ'))?.value);
-        await choices.selectOption(unprinted);
+        await (await variationChoice(choices, unprinted)).click();
         assert.ok(await page.locator('#mv-print-name').isHidden());
     }],
     ['31', 'حذف زیرخط متن در هر دو طرح و حفظ فوکوس و قیمت تخفیفی', async page => {
@@ -1153,6 +1173,56 @@ const cases = [
         await page.locator('a.checkout-button').click();
         await page.waitForURL('**/checkout/');
         await assertNoUnderlines();
+    }],
+    ['32', 'ورود به بخش خرید، انتخاب گزینه‌ها با صفحه‌کلید و پاک‌کردن انتخاب', async page => {
+        for (const [design, width] of [['primary', 1440], ['secondary', 320]]) {
+            await page.setViewportSize({ width, height: 900 });
+            await go(page, '/shop/?mv_design=' + design);
+            const link = page.locator('li.product a.mv-choose-options').first();
+            assert.equal(await link.innerText(), 'انتخاب گزینه‌ها');
+            assert.match(await link.getAttribute('href'), /#mv-product-options$/);
+            assert.ok((await link.boundingBox()).height >= 44);
+            await link.click();
+            await page.waitForURL('**/#mv-product-options');
+            const purchase = page.getByRole('region', { name: 'گزینه‌های خرید' });
+            assert.ok(await purchase.isVisible());
+            assert.ok(await purchase.evaluate(element => {
+                const bounds = element.getBoundingClientRect();
+                return bounds.top < innerHeight && bounds.bottom > 0;
+            }));
+            await go(page, pathOf(messi) + '?mv_options_qa=1#mv-product-options');
+            assert.ok(await page.locator('body.mv-' + design).count());
+            const group = purchase.getByRole('radiogroup');
+            const original = purchase.locator('.variations select');
+            const zero = group.getByRole('radio', { name: 'سایز ۰', exact: true });
+            assert.ok(await group.isVisible());
+            assert.ok(await original.isHidden());
+            assert.equal(await group.locator('[tabindex="0"]').count(), 1);
+            await zero.focus();
+            await page.keyboard.press('Space');
+            assert.equal(await zero.getAttribute('aria-checked'), 'true');
+            assert.equal(await original.inputValue(), '0');
+            await page.keyboard.press('ArrowLeft');
+            assert.notEqual(await original.inputValue(), '0');
+            const selected = group.locator('[aria-checked="true"]');
+            assert.equal(await selected.count(), 1);
+            assert.ok(await selected.evaluate(element => document.activeElement === element));
+            await page.waitForFunction(() => Number(document.querySelector('input[name=variation_id]').value) > 0);
+            const custom = await variationChoice(original, '6 (2XL) با نام و شماره دلخواه');
+            await custom.click();
+            assert.ok(await purchase.locator('#mv-print-name').isVisible());
+            assert.ok((await custom.boundingBox()).height >= 44);
+            const reset = purchase.locator('.reset_variations');
+            await reset.focus();
+            await page.keyboard.press('Enter');
+            assert.equal(await original.inputValue(), '');
+            assert.equal(await selected.count(), 0);
+            assert.ok(await group.locator('[tabindex="0"]').evaluate(element => document.activeElement === element));
+            assert.ok(await purchase.locator('#mv-print-name').isHidden());
+            assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            await custom.click();
+            await purchase.screenshot({ path: resolve(evidence, 'product-options-' + design + '.png') });
+        }
     }],
 ];
 

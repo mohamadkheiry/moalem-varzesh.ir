@@ -30,9 +30,35 @@ function mv_storefront_price_html(WC_Product $product, bool $compact = false): s
 
 add_action('wp_enqueue_scripts', static function (): void {
     if (function_exists('is_product') && is_product()) {
-        wp_enqueue_style('mv-product-page', get_theme_file_uri('assets/product-page.css'), ['moalem-varzesh'], wp_get_theme()->get('Version'));
+        $version = wp_get_theme()->get('Version');
+        wp_enqueue_style('mv-product-page', get_theme_file_uri('assets/product-page.css'), ['moalem-varzesh'], $version);
+        $product = wc_get_product(get_queried_object_id());
+        if ($product && $product->is_type('variable')) {
+            wp_enqueue_script('mv-variation-options', get_theme_file_uri('assets/variation-options.js'), ['wc-add-to-cart-variation'], $version, true);
+        }
     }
 }, 21);
+
+add_filter('woocommerce_loop_add_to_cart_link', static function (string $html, WC_Product $product): string {
+    if (!$product->is_type('variable') || !$product->is_purchasable() || !$product->is_in_stock()) {
+        return $html;
+    }
+
+    $tag = new WP_HTML_Tag_Processor($html);
+    if (!$tag->next_tag('a') || $tag->get_attribute('href') !== $product->get_permalink()) {
+        return $html;
+    }
+
+    $tag->add_class('mv-choose-options');
+    $tag->set_attribute('href', $product->get_permalink() . '#mv-product-options');
+    return $tag->get_updated_html();
+}, 10, 2);
+
+add_filter('woocommerce_product_add_to_cart_text', static function (string $text, WC_Product $product): string {
+    return $product->is_type('variable') && $product->is_purchasable() && $product->is_in_stock()
+        ? 'انتخاب گزینه‌ها'
+        : $text;
+}, 10, 2);
 
 add_action('wp', static function (): void {
     if (!function_exists('is_product') || !is_product()) {
@@ -40,6 +66,9 @@ add_action('wp', static function (): void {
     }
     remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_price', 10);
     remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_meta', 40);
+    add_filter('woocommerce_variation_is_active', static function (bool $active, WC_Product_Variation $variation): bool {
+        return $active && $variation->is_in_stock();
+    }, 10, 2);
 }, 20);
 
 add_action('woocommerce_single_product_summary', static function (): void {
@@ -70,7 +99,7 @@ add_action('woocommerce_single_product_summary', static function (): void {
 add_action('woocommerce_single_product_summary', static function (): void {
     global $product;
     woocommerce_template_single_meta();
-    echo '</div><div class="mv-product-purchase" id="mv-product-options">';
+    echo '</div><div class="mv-product-purchase" id="mv-product-options" role="region" aria-label="گزینه‌های خرید" tabindex="-1">';
     if ($product instanceof WC_Product && ($price = mv_storefront_price_html($product)) !== '') {
         echo '<p class="price">' . $price . '</p>';
     }

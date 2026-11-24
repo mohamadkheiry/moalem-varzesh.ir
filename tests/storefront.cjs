@@ -755,6 +755,7 @@ const cases = [
         const apk = new URL(await appDownload.getAttribute('href'));
         assert.equal(apk.protocol, 'https:');
         assert.match(apk.pathname, /\/moalem-varzesh-android-1\.1\.0-preview\.apk$/);
+        await appDownload.scrollIntoViewIfNeeded();
         await appDownload.locator('img').evaluate(image => image.decode());
         const help = footer.locator('[data-menu="mv_footer_help"]');
         const policies = footer.locator('[data-menu="mv_footer_policies"]');

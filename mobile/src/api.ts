@@ -6,7 +6,8 @@ import type { CartRequest, Catalog, Category, Money, Photo, Product } from './do
 
 const configuredStore = process.env.EXPO_PUBLIC_STORE_URL;
 export const storeOrigin = new URL(configuredStore || 'https://www.moalem-varzesh.ir').origin;
-if (!/^https:/.test(storeOrigin) && !/^http:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2)(:\d+)?$/.test(storeOrigin)) {
+const localStore = /^http:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2)(:\d+)?$/.test(storeOrigin);
+if (!/^https:/.test(storeOrigin) && !localStore) {
   throw new Error('Use HTTPS for the store outside the local development environment.');
 }
 
@@ -95,7 +96,8 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<{
   const abort = () => controller.abort();
   if (options.signal?.aborted) abort();
   options.signal?.addEventListener('abort', abort, { once: true });
-  const timer = setTimeout(abort, 20000);
+  // The development PHP server can serve only one request at a time on Windows.
+  const timer = setTimeout(abort, localStore ? 60000 : 20000);
   try {
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (options.payload) headers['Content-Type'] = 'application/json';

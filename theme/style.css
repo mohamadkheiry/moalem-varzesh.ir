@@ -1,7 +1,7 @@
 /*
 Theme Name: Moalem Varzesh
 Description: قالب فارسی سبک فروشگاه معلم ورزش برای ووکامرس
-Version: 1.17.2
+Version: 1.18.0
 Requires at least: 7.0
 Requires PHP: 8.1
 Text Domain: moalem-varzesh
@@ -534,6 +534,36 @@ button, input, select, textarea { font: inherit; }
 .woocommerce .woocommerce-result-count { font-size: .86rem; color: var(--muted); }
 .woocommerce .woocommerce-ordering { max-width: 100%; }
 .woocommerce .woocommerce-ordering select { width: 100%; }
+
+.woocommerce.mv-catalog-page .woocommerce-products-header {
+    margin-block-end: 1rem;
+    padding-block: .15rem .75rem;
+    border-block-end: 1px solid var(--line);
+}
+.woocommerce.mv-catalog-page .page-title {
+    margin: 0;
+    font-size: clamp(1.6rem, 3.4vw, 3.05rem);
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+.mv-catalog-page .woocommerce-products-header :is(.page-description, .term-description) { max-width: 67ch; color: var(--muted); }
+.mv-catalog-page .mv-shop-cats { gap: .5rem; margin-block: 0 1.2rem; }
+.mv-catalog-page .mv-shop-cats a {
+    padding-inline: .8rem;
+    border-color: #cbd9cd;
+    background: #e9eee5;
+    color: var(--green);
+    font-weight: 740;
+}
+.mv-catalog-page .mv-shop-cats a:hover { border-color: var(--green); background: var(--white); }
+.woocommerce.mv-catalog-page ul.products li.product {
+    padding: clamp(.36rem, 1vw, .7rem);
+    border-radius: .95rem;
+}
+.woocommerce.mv-catalog-page ul.products li.product a img {
+    border-radius: .68rem;
+    background: radial-gradient(ellipse at 48% 65%, #faf9ef, #e5ebe1 78%);
+}
 
 .woocommerce ul.products,
 .woocommerce-page ul.products {

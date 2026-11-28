@@ -8,6 +8,7 @@
     const controls = hero.querySelector('.hero-controls');
     const toggle = hero.querySelector('[data-hero-toggle]');
     const announcement = hero.querySelector('[data-hero-announcement]');
+    const caption = hero.querySelector('[data-hero-caption]');
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     let index = 0;
     let target = 0;
@@ -61,7 +62,9 @@
         index = next;
         slides[index].classList.add('is-active');
         dots[index].setAttribute('aria-pressed', 'true');
-        if (manual) announcement.textContent = dots[index].getAttribute('aria-label');
+        const label = dots[index].getAttribute('aria-label');
+        if (caption) caption.textContent = label;
+        if (manual) announcement.textContent = label;
         schedule();
     }
 

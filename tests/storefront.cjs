@@ -308,6 +308,7 @@ const cases = [
         assert.equal(await page.locator('.hero-slide').count(), 6);
         assert.equal(await page.locator('.hero-dot').count(), 6);
         assert.equal(await page.locator('.hero-slide img[src]').count(), 1);
+        assert.equal(await page.locator('[data-hero-caption]').innerText(), 'لباس ورزشی');
         await page.clock.runFor(7100);
         await page.locator('.hero-slide-boots.is-active').waitFor();
         await page.getByRole('button', { name: 'توقف حرکت خودکار' }).click();
@@ -317,6 +318,7 @@ const cases = [
         await page.getByRole('button', { name: 'توپ فوتبال', exact: true }).click();
         await page.locator('.hero-slide-ball.is-active').waitFor();
         assert.equal(await page.getByRole('button', { name: 'توپ فوتبال', exact: true }).getAttribute('aria-pressed'), 'true');
+        assert.equal(await page.locator('[data-hero-caption]').innerText(), 'توپ فوتبال');
         assert.equal(await page.locator('[data-hero-announcement]').textContent(), 'توپ فوتبال');
         const next = page.getByRole('button', { name: 'تصویر بعدی' });
         const addedSlides = [['gloves', 'دستکش دروازه‌بانی'], ['guards', 'ساق‌بند فوتبال'], ['socks', 'جوراب ورزشی']];

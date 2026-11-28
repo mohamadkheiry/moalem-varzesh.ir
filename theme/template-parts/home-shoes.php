@@ -34,12 +34,14 @@ $all = get_term_link($shoe_category);
                     <p><?php echo esc_html($description); ?></p>
                     <span class="mv-home-card-arrow"><?php mv_icon('arrow'); ?></span>
                 </div>
-                <?php if ($image) {
-                    echo wp_get_attachment_image($image, 'woocommerce_thumbnail', false, [
+                <?php $photo = $image
+                    ? wp_get_attachment_image($image, 'woocommerce_thumbnail', false, [
                         'alt' => '', 'loading' => 'lazy', 'decoding' => 'async',
                         'sizes' => '(min-width: 1024px) 185px, (min-width: 768px) 110px, 38vw',
-                    ]);
-                } ?>
+                    ]) : '';
+                if ($photo) : echo $photo; else : ?>
+                    <img src="<?php echo esc_url(get_theme_file_uri('assets/hero-boots-420.webp')); ?>" alt="" loading="lazy" decoding="async">
+                <?php endif; ?>
             </a>
         <?php endforeach; ?>
     </div>
